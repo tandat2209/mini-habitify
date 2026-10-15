@@ -24,6 +24,7 @@ Product requirements: [product-brief.md](product-brief.md).
 
 ## Release work remaining
 
+- Fresh setup instructions and GitHub CI are prepared; first hosted CI execution remains unverified. See [deployment.md](deployment.md).
 - Configure and verify hosted Supabase/Vercel deployment and hosted email confirmation.
 - Resolve or reassess the development-tool `braces` advisory reported by npm audit; no compatible patched version was reported during setup.
 - Broader cross-browser/manual product testing before calling this a production release.

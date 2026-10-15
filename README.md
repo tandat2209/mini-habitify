@@ -59,6 +59,8 @@ The build uses Webpack because Turbopack’s CSS worker could not bind its local
 
 ## Deployment preparation
 
+Follow the [fresh deployment guide](docs/deployment.md) for the Vercel/Supabase setup, hosted auth configuration, and release checks. The GitHub `CI` workflow uses an isolated local Supabase instance and does not need hosted credentials.
+
 For Vercel, configure the two environment variables with the hosted Supabase URL and publishable key. Apply these migrations to the intended hosted database after reviewing its state. Set Supabase’s site URL/redirect allow-list to the deployed domain. For email confirmation, configure the confirmation template to link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email` and test it in that environment.
 
 Password recovery also requires `NEXT_PUBLIC_APP_URL` set to the deployed app origin and `/auth/callback` in the Supabase redirect allow-list. Configure the recovery email template to link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`, matching `supabase/templates/recovery.html`. Local recovery emails appear in [Mailpit](http://localhost:54324). Local template/redirect changes require a Supabase restart; do not reset the database to reload them.
