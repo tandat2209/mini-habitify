@@ -32,6 +32,14 @@ Migrations run on a fresh local start. To apply new migrations to an existing lo
 
 Calculation policies and tradeoffs are recorded in [docs/decisions.md](docs/decisions.md). There is no GitHub integration; the graph visualizes this app’s tracker activity.
 
+## Install as an app (PWA)
+
+After the PWA update is deployed, open the app in Safari on iPhone/iPad, tap Share → Add to Home Screen, and keep Open as Web App enabled if offered. Chrome/Edge can use their browser install menu; the app also has installation guidance on sign-in and dashboard screens. Installed apps start at Today and may require a fresh sign-in.
+
+Tracking requires an internet connection. The service worker caches only a generic offline screen, never private activities or auth responses. Check-ins are not saved or queued while offline. Native notifications and app-store distribution are not included.
+
+To check the PWA locally, use the production build. Service-worker registration is disabled in development. The browser suite now includes an iPhone-sized WebKit PWA flow; install both engines with `npx playwright install chromium webkit`. Actual iPhone Home Screen installation remains a manual device check.
+
 ## Verification
 
 ```sh
@@ -65,4 +73,4 @@ For Vercel, configure the two environment variables with the hosted Supabase URL
 
 Password recovery also requires `NEXT_PUBLIC_APP_URL` set to the deployed app origin and `/auth/callback` in the Supabase redirect allow-list. Configure the recovery email template to link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`, matching `supabase/templates/recovery.html`. Local recovery emails appear in [Mailpit](http://localhost:54324). Local template/redirect changes require a Supabase restart; do not reset the database to reload them.
 
-Hosted deployment and hosted email confirmation/recovery delivery have not been exercised. The installed development lint toolchain currently has a high-severity transitive `braces` advisory with no compatible patched version reported by the registry; `npm audit --omit=dev` reports zero production vulnerabilities. Resolve or reassess this development dependency finding before a release.
+The app is deployed at [mini-habitify.vercel.app](https://mini-habitify.vercel.app), and GitHub CI has passed. Hosted email delivery and signed-in acceptance checks remain outstanding; see the [deployment status](docs/deployment.md#current-release-evidence). The installed development lint toolchain currently has a high-severity transitive `braces` advisory with no compatible patched version reported by the registry; `npm audit --omit=dev` reports zero production vulnerabilities. Resolve or reassess this development dependency finding before a release.

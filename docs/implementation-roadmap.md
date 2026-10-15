@@ -24,8 +24,8 @@ Product requirements: [product-brief.md](product-brief.md).
 
 ## Release work remaining
 
-- Fresh setup instructions and GitHub CI are prepared; first hosted CI execution remains unverified. See [deployment.md](deployment.md).
-- Configure and verify hosted Supabase/Vercel deployment and hosted email confirmation.
+- Vercel and hosted Supabase are configured; first GitHub CI run passed. See [deployment.md](deployment.md).
+- Configure a sender domain/custom SMTP and verify hosted confirmation/recovery plus signed-in acceptance checks.
 - Resolve or reassess the development-tool `braces` advisory reported by npm audit; no compatible patched version was reported during setup.
 - Broader cross-browser/manual product testing before calling this a production release.
 
@@ -75,3 +75,17 @@ The initial app is committed locally as `be38ba2`; subsequent feature work is no
 - Replaced all 13 user-facing native selects with one shared Radix-based control across tracker forms, Appearance, template building, previews, and historical check-in details. Menus follow all five themes and custom accents, including inside dialog portals; mobile uses the same touch-friendly control.
 - Preserved empty choices, exact user-defined option values, tracker defaults, disabled tracker-type edits, validation, and existing persistence. No dependency, schema, server mutation, or tracker-engine change was needed.
 - Verification: 48 unit tests, type checking, linting, formatting, production build, and diff whitespace checks passed. All 11 browser flows passed across the sequential suite and focused rerun, covering keyboard selection, Escape/focus restoration, saved goal/icon/accent choices after refresh, disabled controls, mobile menus, templates/details/history, theme persistence, and account recovery. Desktop/mobile menu screenshots were inspected. A parallel run encountered dashboard-loading timeouts; sequential execution cleared those timeouts. The updated local preview runs on port 3011.
+
+## 2026-10-15 — First hosted deployment
+
+- Deployed `a3f8110` to https://mini-habitify.vercel.app with the hosted Supabase project in Singapore. Applied all nine migrations through the authenticated CLI and verified remote migration history.
+- Configured the three Production app variables, exact Site URL, and `/auth/callback` redirect. The redeployment with the verified origin is Ready and assigned to the production domain.
+- GitHub CI passed formatting/lint, 48 unit tests, the production audit, 22 database tests, migration replay, build/type checking, and 11 browser flows against its disposable local stack. Hosted schema inspection confirms RLS on all eight tables; anonymous reads return no private data and five themes are public. Live login/signup and unauthenticated dashboard redirects were checked.
+- Hosted authenticated flows and real email delivery remain unverified. The user has no sender domain yet; custom SMTP/templates are a follow-up. Email confirmation was not disabled and no local records were copied to the hosted database.
+
+## 2026-10-15 — PWA foundation (local)
+
+- Added install manifest, standalone/iPhone metadata, app/maskable/Apple icons, production service-worker registration, install guidance, and safe-area support. Kept the existing mobile experience after the user confirmed the fit issue had cleared.
+- Only the public offline fallback is cached. Offline screens disclose that activities require a connection; private content and authentication responses are not cached, and mutations are not queued.
+- Verification: 48 unit tests, lint, type checking, formatting, production build, and whitespace checks passed. The 11 existing Chromium flows passed, and the new PWA flow passed in Chromium and iPhone-sized WebKit: manifest/icon dimensions, installation guidance, worker control/update headers, real saved tracker persistence, offline fallback, no private Cache Storage entries, online recovery, and no horizontal overflow. The iPhone WebKit screenshot and app icon were inspected.
+- CI is configured to install WebKit and run the added iPhone PWA project, but this changed CI configuration has not yet run on GitHub. Physical iPhone Home Screen installation and standalone/keyboard behavior still need a device check. PWA implementation is ready for publication; hosted PWA deployment and physical-device verification remain pending.

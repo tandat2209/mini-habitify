@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Leaf, Check, Sparkles } from "lucide-react";
 import { authenticate } from "@/lib/auth/actions";
 import { Brand } from "./brand";
+import { InstallApp } from "@/components/pwa/install-app";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -128,6 +129,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               {signup ? "Sign in" : "Create account"}
             </Link>
           </p>
+          <InstallApp />
         </div>
       </section>
     </main>

@@ -14,8 +14,8 @@
     "test:security": "vitest run --config vitest.integration.config.ts",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
-    "format": "prettier --write src tests *.ts *.mjs",
-    "format:check": "prettier --check src tests *.ts *.mjs",
+    "format": "prettier --write src tests public *.ts *.mjs",
+    "format:check": "prettier --check src tests public *.ts *.mjs",
     "test:migrations": "node tests/migrations/replay.mjs"
   },
   "dependencies": {

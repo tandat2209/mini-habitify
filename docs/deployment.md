@@ -79,7 +79,11 @@ Check the project's database backup/restore options for its selected Supabase pl
 
 Local security tests: 22 passed. All nine migrations replay successfully in an isolated test database, preserving a legacy check-in. The latest production dependency audit reports no vulnerabilities. The development lint dependency chain still reports the `braces` advisory GHSA-vfj7-8cjw-p6xm; npm's proposed fix downgrades `eslint-config-next` to 14.x and is incompatible with the current Next.js 16 toolchain. It remains a documented development-tool finding; no forced downgrade was applied.
 
-Hosted resources, email delivery, CI execution, and hosted acceptance checks remain unverified until setup is completed.
+As of 2026-10-15, the app is live at [mini-habitify.vercel.app](https://mini-habitify.vercel.app). The Supabase project is `xaqehhirrjyhkcigpfve` in Singapore. All nine migration versions match locally and remotely. A hosted schema inspection confirms RLS is enabled on all eight application tables; anonymous API reads return no private rows and the public catalog returns five themes.
+
+[The first GitHub CI run passed](https://github.com/tandat2209/mini-habitify/actions/runs/38736379208) for commit `a3f8110`. Vercel deployment `49zS9dKMGxsCuXYMRCfzWVqrSyt2` is Ready and owns the production domain. The three application environment variables are scoped to Production. Supabase Site URL is the verified production origin and the redirect allow-list contains its exact `/auth/callback` URL.
+
+The live login/signup pages load, and unauthenticated `/today` requests redirect to login. Full hosted signup/confirmation/recovery, signed-in tracking persistence, and two-account isolation checks remain outstanding. Email confirmation remains enabled. No sender domain or custom SMTP provider is configured; Supabase's default sender restrictions apply. On the current hosted plan, the dashboard requires custom SMTP (or a plan upgrade) before email templates can be customized. Do not treat the beta as ready for general email signup until delivery and callback flows are verified.
 
 ## References
 

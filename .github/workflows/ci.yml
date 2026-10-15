@@ -53,7 +53,7 @@ jobs:
       - run: npm run test:migrations
       - run: npm run build
       - run: npm run typecheck
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e -- --workers=1
       - name: Stop disposable local Supabase
         if: always()

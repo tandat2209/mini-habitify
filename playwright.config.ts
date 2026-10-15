@@ -5,7 +5,14 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
   use: { baseURL: origin, trace: "retain-on-failure" },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "iphone-webkit",
+      testMatch: "pwa.spec.ts",
+      use: { ...devices["iPhone 13"] },
+    },
+  ],
   webServer: {
     command: process.env.PLAYWRIGHT_USE_PRODUCTION
       ? `npm run start -- --port ${port}`

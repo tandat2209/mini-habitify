@@ -1881,3 +1881,63 @@ a {
     min-height: 44px;
   }
 }
+
+.pwa-install {
+  max-width: 460px;
+  margin-top: 24px;
+  font-size: 13px;
+}
+.pwa-install > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--primary-ink, var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pwa-install-guide {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  line-height: 1.65;
+}
+.pwa-install-guide [role="status"]:empty {
+  display: none;
+}
+/* Cover-mode viewports keep important content inside iPhone safe areas. */
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.app,
+.auth-page {
+  min-height: calc(
+    100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+  );
+}
+.sidebar {
+  inset: env(safe-area-inset-top) auto env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+@media (display-mode: standalone) {
+  [data-slot="dialog-content"] {
+    top: calc(
+      env(safe-area-inset-top) +
+        (100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 2
+    );
+    max-height: calc(
+      100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px
+    );
+  }
+  .template-builder-dialog {
+    height: calc(
+      100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px
+    );
+  }
+}

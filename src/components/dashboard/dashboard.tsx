@@ -29,6 +29,7 @@ import { TrackerCard } from "@/components/trackers/tracker-card";
 import { TrackerForm } from "@/components/trackers/tracker-form";
 import { TrackerHistory } from "@/components/trackers/tracker-history";
 import { AppearanceScope } from "@/components/appearance/appearance-scope";
+import { InstallApp } from "@/components/pwa/install-app";
 import { Appearance } from "@/components/appearance/appearance";
 import { Button } from "@/components/ui/button";
 import {
@@ -315,6 +316,7 @@ export function Dashboard({ data }: { data: Data }) {
             <Check size={12} />
             Your progress is saved in your space. <span>· {data.timezone}</span>
           </p>
+          <InstallApp />
         </main>
       </div>
       {create && (

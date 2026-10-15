@@ -12,21 +12,21 @@
 
 These are intentionally unresolved; agents should choose the simplest maintainable policy, document the rationale, and test it before shipping affected behavior.
 
-| Decision | Why it matters |
-| --- | --- |
-| User IANA timezone, default selection, and behavior after a timezone change | Daily boundaries, historical grouping, DST, and travel |
-| Occurrence timestamps versus explicit tracking dates and backdated entries | Consistent history and correct period queries |
-| Habit check-in uniqueness and undo behavior | Retries and multiple entries must not inflate completion |
-| Numeric aggregation and target direction | Weight, mood, and pages do not share one automatic sum/target rule |
-| Canonical duration unit and display conversion | Storage and progress must remain consistent |
-| Week start, period boundaries, and weekday schedules | Weekly/monthly goals and daily dashboard denominator |
-| Targetless trackers, over-target progress, and empty periods | Avoid misleading completion and division by zero |
-| Negative, zero, and fractional log values by tracker type | Validation needs to match domain meaning |
-| Editing tracker goals/schedules and historical progress | Retroactive behavior must be explicit |
-| Archive behavior for new logs and historical navigation | Preserve history without accidental future tracking |
-| Shared theme catalog versus user-owned preferences/widgets | Correct read/write policy for each table |
-| Presentation variants and their relationship to themes/layouts/widgets | Support different experiences without duplicating domain logic |
-| Playful visualization metaphor and check-in presentation | Make the experience approachable without assuming rewards or gamification |
+| Decision                                                                    | Why it matters                                                            |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| User IANA timezone, default selection, and behavior after a timezone change | Daily boundaries, historical grouping, DST, and travel                    |
+| Occurrence timestamps versus explicit tracking dates and backdated entries  | Consistent history and correct period queries                             |
+| Habit check-in uniqueness and undo behavior                                 | Retries and multiple entries must not inflate completion                  |
+| Numeric aggregation and target direction                                    | Weight, mood, and pages do not share one automatic sum/target rule        |
+| Canonical duration unit and display conversion                              | Storage and progress must remain consistent                               |
+| Week start, period boundaries, and weekday schedules                        | Weekly/monthly goals and daily dashboard denominator                      |
+| Targetless trackers, over-target progress, and empty periods                | Avoid misleading completion and division by zero                          |
+| Negative, zero, and fractional log values by tracker type                   | Validation needs to match domain meaning                                  |
+| Editing tracker goals/schedules and historical progress                     | Retroactive behavior must be explicit                                     |
+| Archive behavior for new logs and historical navigation                     | Preserve history without accidental future tracking                       |
+| Shared theme catalog versus user-owned preferences/widgets                  | Correct read/write policy for each table                                  |
+| Presentation variants and their relationship to themes/layouts/widgets      | Support different experiences without duplicating domain logic            |
+| Playful visualization metaphor and check-in presentation                    | Make the experience approachable without assuming rewards or gamification |
 
 ## Decision record format
 
@@ -106,3 +106,11 @@ These policies are implemented and covered by domain, real-database, and browser
 - Menus inherit theme and custom accent tokens through the appearance contexts even when portalled outside a dialog. Keep selection indicators, keyboard/typeahead navigation, Escape dismissal, restored trigger focus, scroll controls, and touch-sized mobile options.
 - Use the same accessible control on desktop and mobile. Keep the native form adapter generated internally by Radix hidden from assistive technology; users interact with the themed trigger and option list.
 - Encode internal option identifiers to support explicit empty choices without colliding with any user-defined string. Return original values unchanged, including surrounding whitespace. Existing metric semantics, validation, ownership, and persistence remain unchanged.
+
+## 2026-10-15 — Installable PWA foundation
+
+- Add an App Router manifest with stable ID/scope `/`, start URL `/today`, standalone display, PNG icons (including a padded maskable icon), and an Apple touch icon. Keep browser zoom enabled. Cover-mode viewports use safe-area padding; installed dialogs are bounded within the usable screen.
+- Register a small same-origin service worker in production, with no new runtime dependency. It caches only a generic `/offline.html` screen. Private pages, React/server responses, API calls, auth callbacks, POSTs, and check-in data are never written to Cache Storage. Offline mutations and queued retries are not implemented.
+- Navigations use the network and fall back to the generic offline page only on network failure. Auth callbacks bypass the fallback. The offline screen offers an explicit online retry. Static PWA resources bypass session-refresh middleware; application auth/RLS contracts are unchanged.
+- Preserve drafts during worker updates: activate the new worker without forcing a page reload. Bump the worker's cache version when changing the cached offline screen. Retire only this app's older offline caches.
+- Install guidance is available on auth and dashboard screens. Chromium's deferred install prompt is used only after an explicit click; iPhone/iPad guidance explains Safari Share → Add to Home Screen. Already-installed apps hide the guidance. Push, background synchronization, offline tracking, and app-store packaging remain out of scope.
