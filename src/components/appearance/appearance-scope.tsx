@@ -5,6 +5,8 @@ import type { Preferences } from "@/features/trackers/validation";
 export const AppearanceColorContext = createContext<
   Record<`--${string}`, string>
 >({});
+export const AppearanceThemeContext =
+  createContext<Preferences["theme"]>("paper");
 export function AppearanceScope({
   theme,
   primaryColor,
@@ -20,17 +22,19 @@ export function AppearanceScope({
 }) {
   const colors = getAccentTokens(theme, primaryColor);
   return (
-    <AppearanceColorContext.Provider value={colors}>
-      <div
-        className="app"
-        data-theme={theme}
-        data-layout={layout}
-        data-presentation={presentation}
-        data-custom-primary={colors["--primary"] ? true : undefined}
-        style={colors as CSSProperties}
-      >
-        {children}
-      </div>
-    </AppearanceColorContext.Provider>
+    <AppearanceThemeContext.Provider value={theme}>
+      <AppearanceColorContext.Provider value={colors}>
+        <div
+          className="app"
+          data-theme={theme}
+          data-layout={layout}
+          data-presentation={presentation}
+          data-custom-primary={colors["--primary"] ? true : undefined}
+          style={colors as CSSProperties}
+        >
+          {children}
+        </div>
+      </AppearanceColorContext.Provider>
+    </AppearanceThemeContext.Provider>
   );
 }

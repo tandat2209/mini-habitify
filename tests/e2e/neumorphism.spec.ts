@@ -1,3 +1,4 @@
+import { selectOption } from "./select-option";
 import { test, expect } from "@playwright/test";
 test("Neumorphism previews, persists, and keeps check-ins across desktop and mobile", async ({
   page,
@@ -24,7 +25,7 @@ test("Neumorphism previews, persists, and keeps check-ins across desktop and mob
       .getByRole("button", { name: "New tracker", exact: true })
       .click();
     await page.getByLabel("Name", { exact: true }).fill(name);
-    await page.getByLabel("Tracker type").selectOption(type);
+    await selectOption(page.getByLabel("Tracker type"), type);
     await page
       .getByRole("button", { name: "Create tracker", exact: true })
       .click();
@@ -46,7 +47,7 @@ test("Neumorphism previews, persists, and keeps check-ins across desktop and mob
   });
   const before = await page.locator(".tracker-value").allTextContents();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByLabel("Theme", { exact: true }).selectOption("neumorphism");
+  await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
   await expect(page.locator(".app")).toHaveAttribute(
     "data-theme",
     "neumorphism",
@@ -58,7 +59,7 @@ test("Neumorphism previews, persists, and keeps check-ins across desktop and mob
   await page.reload();
   await expect(page.locator(".app")).toHaveAttribute("data-theme", "paper");
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByLabel("Theme", { exact: true }).selectOption("neumorphism");
+  await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
   await page
     .getByRole("button", { name: "Save appearance", exact: true })
     .click();

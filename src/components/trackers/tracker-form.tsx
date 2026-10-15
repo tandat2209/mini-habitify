@@ -28,6 +28,7 @@ import {
   FieldSet,
   FieldLegend,
 } from "@/components/ui/field";
+import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -69,6 +70,8 @@ export function TrackerForm({
     defaultValues: tracker ? trackerSchema.parse(tracker) : defaults,
   });
   const templateId = useWatch({ control, name: "activity_template_id" });
+  const icon = useWatch({ control, name: "icon" });
+  const color = useWatch({ control, name: "color" });
   const type = useWatch({ control, name: "type" });
   const period = useWatch({ control, name: "goal_period" });
   const target = useWatch({ control, name: "target" });
@@ -119,21 +122,20 @@ export function TrackerForm({
               <FieldLabel htmlFor="activity-template">
                 Activity template
               </FieldLabel>
-              <select
+              <Select
                 id="activity-template"
-                className="native-select"
                 value={templateId ?? ""}
-                onChange={(e) =>
-                  setValue("activity_template_id", e.target.value || null)
+                onValueChange={(value) =>
+                  setValue("activity_template_id", value || null)
                 }
-              >
-                <option value="">No template</option>
-                {templates.map((template) => (
-                  <option value={template.id} key={template.id}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "No template" },
+                  ...templates.map((template) => ({
+                    value: template.id,
+                    label: template.name,
+                  })),
+                ]}
+              />
               <p className="muted text-xs">
                 Optional details for future entries. Existing entries keep their
                 recorded template.
@@ -142,13 +144,11 @@ export function TrackerForm({
             <div className="form-grid">
               <Field>
                 <FieldLabel htmlFor="type">Tracker type</FieldLabel>
-                <select
-                  className="native-select"
+                <Select<TrackerInput["type"]>
                   id="type"
                   value={type}
                   disabled={!!tracker}
-                  onChange={(e) => {
-                    const value = e.target.value as TrackerInput["type"];
+                  onValueChange={(value) => {
                     setValue("type", value);
                     setValue(
                       "target",
@@ -156,33 +156,33 @@ export function TrackerForm({
                     );
                     setValue("unit", value === "duration" ? "seconds" : "");
                   }}
-                >
-                  <option value="habit">Habit · yes or no</option>
-                  <option value="counter">Counter · add it up</option>
-                  <option value="duration">Duration · time spent</option>
-                  <option value="numeric">Numeric · a measurement</option>
-                </select>
+                  options={[
+                    { value: "habit", label: "Habit · yes or no" },
+                    { value: "counter", label: "Counter · add it up" },
+                    { value: "duration", label: "Duration · time spent" },
+                    { value: "numeric", label: "Numeric · a measurement" },
+                  ]}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="period">Goal period</FieldLabel>
-                <select
-                  className="native-select"
+                <Select<TrackerInput["goal_period"]>
                   id="period"
-                  {...register("goal_period")}
-                  onChange={(e) => {
-                    const p = e.target.value as TrackerInput["goal_period"];
-                    setValue("goal_period", p);
+                  value={period}
+                  onValueChange={(period) => {
+                    setValue("goal_period", period);
                     if (type === "habit")
                       setValue(
                         "target",
-                        p === "daily" ? 1 : p === "weekly" ? 5 : 20,
+                        period === "daily" ? 1 : period === "weekly" ? 5 : 20,
                       );
                   }}
-                >
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
+                  options={[
+                    { value: "daily", label: "Daily" },
+                    { value: "weekly", label: "Weekly" },
+                    { value: "monthly", label: "Monthly" },
+                  ]}
+                />
               </Field>
               <Field data-invalid={!!errors.target}>
                 <FieldLabel htmlFor="target">
@@ -235,31 +235,33 @@ export function TrackerForm({
               </Field>
               <Field>
                 <FieldLabel htmlFor="icon">Icon</FieldLabel>
-                <select
+                <Select<TrackerInput["icon"]>
                   id="icon"
-                  className="native-select"
-                  {...register("icon")}
-                >
-                  <option value="spark">Spark</option>
-                  <option value="book">Book</option>
-                  <option value="heart">Heart</option>
-                  <option value="walk">Movement</option>
-                  <option value="code">Code</option>
-                  <option value="water">Water</option>
-                </select>
+                  value={icon}
+                  onValueChange={(value) => setValue("icon", value)}
+                  options={[
+                    { value: "spark", label: "Spark" },
+                    { value: "book", label: "Book" },
+                    { value: "heart", label: "Heart" },
+                    { value: "walk", label: "Movement" },
+                    { value: "code", label: "Code" },
+                    { value: "water", label: "Water" },
+                  ]}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="color">Accent</FieldLabel>
-                <select
+                <Select<TrackerInput["color"]>
                   id="color"
-                  className="native-select"
-                  {...register("color")}
-                >
-                  <option value="sage">Sage</option>
-                  <option value="peach">Peach</option>
-                  <option value="lavender">Lavender</option>
-                  <option value="blue">Blue</option>
-                </select>
+                  value={color}
+                  onValueChange={(value) => setValue("color", value)}
+                  options={[
+                    { value: "sage", label: "Sage" },
+                    { value: "peach", label: "Peach" },
+                    { value: "lavender", label: "Lavender" },
+                    { value: "blue", label: "Blue" },
+                  ]}
+                />
               </Field>
             </div>
             <FieldSet>

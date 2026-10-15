@@ -99,3 +99,10 @@ These policies are implemented and covered by domain, real-database, and browser
 - Desktop uses an editor/preview layout with scrollable preview and persistent save controls. Mobile switches between Build form and Preview form. Reordering uses labeled buttons rather than drag-and-drop.
 - “Create template” and “Save changes” use the existing immutable publication path. Existing-template edits disclose: “Changes apply to future check-ins. Previous entries stay unchanged.” Version numbers remain automatic. Closing without saving discards the draft.
 - Advanced JSON import validates before replacing the draft; invalid JSON leaves the visual draft intact. “Load current definition” exposes the current schema for copying. Subjects remain the next separate phase.
+
+## 2026-10-15 — Shared themed selection controls
+
+- Replace all user-facing native selects in tracker forms, Appearance, template authoring, and structured check-in details with one Radix Select composition. Use the already-installed Radix primitives; no new dependency or database change is needed.
+- Menus inherit theme and custom accent tokens through the appearance contexts even when portalled outside a dialog. Keep selection indicators, keyboard/typeahead navigation, Escape dismissal, restored trigger focus, scroll controls, and touch-sized mobile options.
+- Use the same accessible control on desktop and mobile. Keep the native form adapter generated internally by Radix hidden from assistive technology; users interact with the themed trigger and option list.
+- Encode internal option identifiers to support explicit empty choices without colliding with any user-defined string. Return original values unchanged, including surrounding whitespace. Existing metric semantics, validation, ownership, and persistence remain unchanged.

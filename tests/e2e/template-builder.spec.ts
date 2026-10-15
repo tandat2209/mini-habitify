@@ -1,3 +1,4 @@
+import { selectOption } from "./select-option";
 import { test, expect, type Page } from "@playwright/test";
 async function addField(
   page: Page,
@@ -8,7 +9,7 @@ async function addField(
   await page.getByRole("button", { name: "Add field", exact: true }).click();
   const card = page.locator(".template-field-card").last();
   await card.getByLabel("Field label", { exact: true }).fill(label);
-  await card.getByLabel("Field type", { exact: true }).selectOption(type);
+  await selectOption(card.getByLabel("Field type", { exact: true }), type);
   if (options)
     for (let index = 0; index < options.length; index++)
       await card
@@ -125,9 +126,9 @@ test("builds reusable templates visually and preserves historical field versions
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "New tracker", exact: true }).click();
   await page.getByLabel("Name", { exact: true }).fill("Daily activity");
-  await page
-    .getByLabel("Activity template", { exact: true })
-    .selectOption({ label: "My session" });
+  await selectOption(page.getByLabel("Activity template", { exact: true }), {
+    label: "My session",
+  });
   await page
     .getByRole("button", { name: "Create tracker", exact: true })
     .click();
@@ -139,9 +140,9 @@ test("builds reusable templates visually and preserves historical field versions
     .fill("Actual saved details");
   await page.getByRole("button", { name: "Save details", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
-  await page
-    .getByLabel("Template to edit", { exact: true })
-    .selectOption({ label: "My session" });
+  await selectOption(page.getByLabel("Template to edit", { exact: true }), {
+    label: "My session",
+  });
   const first = page.locator(".template-field-card").first();
   expect(await first.getAttribute("data-field-key")).toBe(originalKey);
   await first
@@ -173,9 +174,9 @@ test("builds reusable templates visually and preserves historical field versions
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Templates", exact: true }).click();
-  await page
-    .getByLabel("Template to edit", { exact: true })
-    .selectOption({ label: "My session" });
+  await selectOption(page.getByLabel("Template to edit", { exact: true }), {
+    label: "My session",
+  });
   await page.getByRole("button", { name: "Preview form", exact: true }).click();
   await expect(
     preview.getByLabel("Session summary", { exact: true }),

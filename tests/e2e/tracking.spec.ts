@@ -1,3 +1,4 @@
+import { selectOption } from "./select-option";
 import { test, expect } from "@playwright/test";
 test("account → habit → check-in → refresh → appearance → log out", async ({
   page,
@@ -36,10 +37,11 @@ test("account → habit → check-in → refresh → appearance → log out", as
     card.getByRole("button", { name: "Undo check-in" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByLabel("Theme", { exact: true }).selectOption("terminal");
-  await page
-    .getByLabel("Experience", { exact: true })
-    .selectOption("developer");
+  await selectOption(page.getByLabel("Theme", { exact: true }), "terminal");
+  await selectOption(
+    page.getByLabel("Experience", { exact: true }),
+    "developer",
+  );
   await page.getByRole("button", { name: "Save appearance" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.reload();
@@ -100,7 +102,7 @@ test("all tracker types, log editing, playful style, compact layout, and archive
       .getByRole("button", { name: "New tracker", exact: true })
       .click();
     await page.getByLabel("Name", { exact: true }).fill(name);
-    await page.getByLabel("Tracker type").selectOption(type);
+    await selectOption(page.getByLabel("Tracker type"), type);
     await page
       .getByRole("button", { name: "Create tracker", exact: true })
       .click();
@@ -119,9 +121,9 @@ test("all tracker types, log editing, playful style, compact layout, and archive
   await expect(page.locator(".history-row")).toContainText("3");
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByLabel("Theme", { exact: true }).selectOption("pastel");
-  await page.getByLabel("Experience", { exact: true }).selectOption("playful");
-  await page.getByLabel("Layout", { exact: true }).selectOption("compact");
+  await selectOption(page.getByLabel("Theme", { exact: true }), "pastel");
+  await selectOption(page.getByLabel("Experience", { exact: true }), "playful");
+  await selectOption(page.getByLabel("Layout", { exact: true }), "compact");
   await page.getByRole("button", { name: "Save appearance" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.reload();

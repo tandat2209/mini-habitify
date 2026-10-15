@@ -1,3 +1,4 @@
+import { selectOption } from "./select-option";
 import { test, expect } from "@playwright/test";
 const definition = {
   name: "Session notes",
@@ -50,9 +51,9 @@ test("reusable templates, progress-only check-ins, details editing and immutable
       .getByRole("button", { name: "New tracker", exact: true })
       .click();
     await page.getByLabel("Name", { exact: true }).fill(name);
-    await page
-      .getByLabel("Activity template", { exact: true })
-      .selectOption({ label: "Session notes" });
+    await selectOption(page.getByLabel("Activity template", { exact: true }), {
+      label: "Session notes",
+    });
     await page
       .getByRole("button", { name: "Create tracker", exact: true })
       .click();
@@ -75,13 +76,10 @@ test("reusable templates, progress-only check-ins, details editing and immutable
     .getByLabel("Summary", { exact: true })
     .fill("Worked through examples");
   await card.getByLabel("Reference date", { exact: true }).fill("2026-10-14");
-  await expect(
-    card
-      .getByLabel("Mode", { exact: true })
-      .locator("option")
-      .filter({ hasText: "Together" }),
-  ).toHaveAttribute("value", " Together ");
-  await card.getByLabel("Mode", { exact: true }).selectOption(" Together ");
+  await card.getByLabel("Mode", { exact: true }).click();
+  const together = page.getByRole("option", { name: "Together", exact: true });
+  await expect(together).toHaveAttribute("data-value", " Together ");
+  await together.click();
   await card.getByLabel("New", { exact: true }).check();
   await card.getByLabel("Items", { exact: true }).fill("First\nSecond");
   await card.getByRole("button", { name: "Save details", exact: true }).click();
@@ -103,9 +101,9 @@ test("reusable templates, progress-only check-ins, details editing and immutable
   await expect(page.locator(".history-row")).toContainText("Edited original");
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
-  await page
-    .getByLabel("Template to edit")
-    .selectOption({ label: "Session notes" });
+  await selectOption(page.getByLabel("Template to edit"), {
+    label: "Session notes",
+  });
   await page.getByText("Advanced JSON", { exact: true }).click();
   await page.getByLabel("Template definition").fill(
     JSON.stringify({
@@ -151,7 +149,7 @@ test("reusable templates, progress-only check-ins, details editing and immutable
     .fill("Edited after publication");
   await page.getByRole("button", { name: "Save entry", exact: true }).click();
   await page.getByRole("button", { name: "Edit tracker", exact: true }).click();
-  await page.getByLabel("Activity template", { exact: true }).selectOption("");
+  await selectOption(page.getByLabel("Activity template", { exact: true }), "");
   await page.getByRole("button", { name: "Save tracker", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "View Practice history" }).click();

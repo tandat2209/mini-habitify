@@ -7,6 +7,7 @@ import {
   type WidgetKind,
 } from "@/features/themes/presets";
 import { themeColors } from "@/features/themes/colors";
+import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -89,29 +90,26 @@ export function Appearance({
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="preset">Experience preset</FieldLabel>
-                <select
+                <Select<Preferences["presentation"] | "">
                   id="preset"
-                  className="native-select"
                   value=""
-                  onChange={(e) => {
-                    if (e.target.value)
-                      previewAppearance(
-                        applyExperiencePreset(
-                          e.target.value as Preferences["presentation"],
-                          preview,
-                        ),
-                      );
+                  onValueChange={(value) => {
+                    if (value)
+                      previewAppearance(applyExperiencePreset(value, preview));
                   }}
-                >
-                  <option value="">Choose a starting point…</option>
-                  <option value="calm">Calm · an editorial everyday</option>
-                  <option value="developer">
-                    Developer · graph first, compact trackers
-                  </option>
-                  <option value="playful">
-                    Playful · your small-step journey
-                  </option>
-                </select>
+                  options={[
+                    { value: "", label: "Choose a starting point…" },
+                    { value: "calm", label: "Calm · an editorial everyday" },
+                    {
+                      value: "developer",
+                      label: "Developer · graph first, compact trackers",
+                    },
+                    {
+                      value: "playful",
+                      label: "Playful · your small-step journey",
+                    },
+                  ]}
+                />
                 <p className="muted text-xs">
                   A preset sets your theme, layout, and widgets. You can
                   customize each below.
@@ -119,23 +117,17 @@ export function Appearance({
               </Field>
               <Field>
                 <FieldLabel htmlFor="theme">Theme</FieldLabel>
-                <select
+                <Select
                   id="theme"
-                  className="native-select"
                   value={preview.theme}
-                  onChange={(e) =>
-                    previewAppearance({
-                      ...preview,
-                      theme: e.target.value as Preferences["theme"],
-                    })
+                  onValueChange={(theme) =>
+                    previewAppearance({ ...preview, theme })
                   }
-                >
-                  {themes.map((t) => (
-                    <option key={t} value={t}>
-                      {t[0].toUpperCase() + t.slice(1)}
-                    </option>
-                  ))}
-                </select>
+                  options={themes.map((theme) => ({
+                    value: theme,
+                    label: theme[0].toUpperCase() + theme.slice(1),
+                  }))}
+                />
               </Field>
               <Field data-invalid={!colorValid}>
                 <FieldLabel htmlFor="primary-color">Primary color</FieldLabel>
@@ -216,45 +208,37 @@ export function Appearance({
               </Field>
               <Field>
                 <FieldLabel htmlFor="experience">Experience</FieldLabel>
-                <select
+                <Select
                   id="experience"
-                  className="native-select"
                   value={preview.presentation}
-                  onChange={(e) =>
-                    onPreview({
-                      ...preview,
-                      presentation: e.target
-                        .value as Preferences["presentation"],
-                    })
+                  onValueChange={(presentation) =>
+                    onPreview({ ...preview, presentation })
                   }
-                >
-                  {presentations.map((p) => (
-                    <option key={p} value={p}>
-                      {p === "calm"
+                  options={presentations.map((presentation) => ({
+                    value: presentation,
+                    label:
+                      presentation === "calm"
                         ? "Calm · a quiet everyday"
-                        : p === "developer"
+                        : presentation === "developer"
                           ? "Developer · activity graph & dense cards"
-                          : "Playful · little steps & bigger controls"}
-                    </option>
-                  ))}
-                </select>
+                          : "Playful · little steps & bigger controls",
+                  }))}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="layout">Layout</FieldLabel>
-                <select
+                <Select<Preferences["layout"]>
                   id="layout"
-                  className="native-select"
                   value={preview.layout}
-                  onChange={(e) =>
-                    onPreview({
-                      ...preview,
-                      layout: e.target.value as Preferences["layout"],
-                    })
-                  }
-                >
-                  <option value="standard">Standard · room to breathe</option>
-                  <option value="compact">Compact · everything in a row</option>
-                </select>
+                  onValueChange={(layout) => onPreview({ ...preview, layout })}
+                  options={[
+                    { value: "standard", label: "Standard · room to breathe" },
+                    {
+                      value: "compact",
+                      label: "Compact · everything in a row",
+                    },
+                  ]}
+                />
               </Field>
               <fieldset className="widget-settings">
                 <legend>Dashboard widgets</legend>

@@ -707,18 +707,6 @@ a {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
-.native-select {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  padding: 9px 10px;
-  font-size: 13px;
-}
-.native-select option {
-  background: var(--card);
-  color: var(--foreground);
-}
 .weekdays {
   display: flex;
   flex-wrap: wrap;
@@ -1371,7 +1359,11 @@ a {
   border: 1px solid var(--primary);
 }
 [data-theme="neumorphism"]
-  :is([data-slot="input"], [data-slot="textarea"], .native-select) {
+  :is(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="select-trigger"]
+  ) {
   background: var(--background);
   color: var(--foreground);
   border: 1px solid var(--border);
@@ -1769,5 +1761,123 @@ a {
   .template-meta {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
+  }
+}
+
+/* Shared dropdowns use the same tokens inside and outside dialog portals. */
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--foreground);
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.select-trigger > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.select-trigger svg,
+.select-content svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.select-trigger:focus-visible {
+  outline: 2px solid var(--primary-ink, var(--primary));
+  outline-offset: 3px;
+}
+.select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.select-trigger[aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+.select-content {
+  z-index: 60;
+  min-width: var(--radix-select-trigger-width);
+  max-width: min(460px, calc(100vw - 24px));
+  max-height: min(320px, var(--radix-select-content-available-height));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 12px 32px #00000020;
+  font-family: var(--font-body), sans-serif;
+  font-size: 13px;
+}
+.select-viewport {
+  padding: 5px;
+}
+.select-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  gap: 12px;
+  padding: 9px 34px 9px 10px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+  overflow-wrap: anywhere;
+}
+.select-item[data-highlighted] {
+  background: var(--muted);
+  color: var(--foreground);
+  box-shadow: inset 0 0 0 1px var(--primary-ink, var(--primary));
+}
+.select-item[data-state="checked"] {
+  color: var(--primary-ink, var(--primary));
+  font-weight: 600;
+}
+.select-item[data-disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.select-indicator {
+  position: absolute;
+  right: 10px;
+  display: flex;
+}
+.select-scroll-button {
+  display: flex;
+  justify-content: center;
+  padding: 4px;
+  background: var(--card);
+}
+[data-theme="neumorphism"].select-content {
+  background: var(--background);
+  box-shadow: var(--neu-small);
+  border-radius: 14px;
+}
+[data-theme="terminal"].select-content {
+  font-family: var(--font-mono), monospace;
+}
+[data-theme="brutalist"].select-content {
+  border: 2px solid var(--foreground);
+  border-radius: 0;
+  box-shadow: 5px 5px 0 var(--foreground);
+}
+@media (pointer: coarse) {
+  .select-trigger {
+    min-height: 44px;
+  }
+  .select-item {
+    min-height: 44px;
   }
 }

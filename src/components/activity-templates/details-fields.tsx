@@ -1,6 +1,7 @@
 "use client";
 import { useId } from "react";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type {
@@ -78,19 +79,18 @@ export function DetailsFields({
                 ))}
               </fieldset>
             ) : field.type === "select" ? (
-              <select
+              <Select
                 {...common}
-                className="native-select"
                 value={typeof current === "string" ? current : ""}
-                onChange={(e) => set(field.key, e.target.value)}
-              >
-                <option value="">Choose an option</option>
-                {field.options!.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(next) => set(field.key, next)}
+                options={[
+                  { value: "", label: "Choose an option" },
+                  ...field.options!.map((option) => ({
+                    value: option,
+                    label: option,
+                  })),
+                ]}
+              />
             ) : field.type === "text" || field.type === "list" ? (
               <Textarea
                 {...common}

@@ -1,3 +1,4 @@
+import { selectOption } from "./select-option";
 import { test, expect } from "@playwright/test";
 test("custom primary colors preview, persist in pages and dialogs, and reset to theme defaults", async ({
   page,
@@ -24,7 +25,7 @@ test("custom primary colors preview, persist in pages and dialogs, and reset to 
       getComputedStyle(element).getPropertyValue("--primary").trim(),
     );
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByLabel("Theme", { exact: true }).selectOption("neumorphism");
+  await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
   await page.getByLabel("Primary color hex", { exact: true }).fill("#4f8ec9");
   expect(await primary()).toBe("#4f8ec9");
   await page
@@ -32,7 +33,7 @@ test("custom primary colors preview, persist in pages and dialogs, and reset to 
     .click();
   expect(await primary()).toBe("#35573c");
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByLabel("Theme", { exact: true }).selectOption("neumorphism");
+  await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
   await page.getByLabel("Primary color", { exact: true }).fill("#4f8ec9");
   await page.getByLabel("Primary color hex", { exact: true }).fill("#oops");
   await expect(

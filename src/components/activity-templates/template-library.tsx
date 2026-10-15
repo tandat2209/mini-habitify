@@ -23,6 +23,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DetailsFields } from "./details-fields";
@@ -194,20 +195,19 @@ export function TemplateLibrary({
             <FieldLabel htmlFor={`${formId}-select`}>
               Template to edit
             </FieldLabel>
-            <select
+            <Select
               id={`${formId}-select`}
-              className="native-select"
               value={selected}
               disabled={pending}
-              onChange={(event) => selectTemplate(event.target.value)}
-            >
-              <option value="">Create a new template</option>
-              {data.templates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name}
-                </option>
-              ))}
-            </select>
+              onValueChange={selectTemplate}
+              options={[
+                { value: "", label: "Create a new template" },
+                ...data.templates.map((template) => ({
+                  value: template.id,
+                  label: template.name,
+                })),
+              ]}
+            />
           </Field>
         </div>
         <div className="builder-view-switch" aria-label="Template builder view">

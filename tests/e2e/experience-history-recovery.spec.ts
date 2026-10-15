@@ -1,3 +1,4 @@
+import { selectOption } from "./select-option";
 import { test, expect, type Page } from "@playwright/test";
 async function signup(page: Page) {
   const email = `features-${crypto.randomUUID()}@example.com`;
@@ -31,7 +32,7 @@ test("presets and all widget settings persist without changing check-ins", async
     card.getByRole("button", { name: "Undo check-in" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByLabel("Experience preset").selectOption("developer");
+  await selectOption(page.getByLabel("Experience preset"), "developer");
   await page.getByLabel("Show daily summary").uncheck();
   await page.getByRole("button", { name: "Move Recent activity up" }).click();
   await page.getByRole("button", { name: "Save appearance" }).click();
@@ -49,7 +50,7 @@ test("presets and all widget settings persist without changing check-ins", async
     card.getByRole("button", { name: "Undo check-in" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
-  await page.getByLabel("Experience preset").selectOption("playful");
+  await selectOption(page.getByLabel("Experience preset"), "playful");
   await page.getByRole("button", { name: "Save appearance" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.locator('[data-widget="recent"]')).toHaveCount(0);

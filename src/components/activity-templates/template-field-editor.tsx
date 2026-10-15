@@ -2,6 +2,7 @@
 import { ArrowUp, ArrowDown, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
   changeFieldType,
@@ -95,22 +96,15 @@ export function TemplateFieldEditor({
         </Field>
         <Field>
           <FieldLabel htmlFor={`${field.key}-type`}>Field type</FieldLabel>
-          <select
+          <Select
             id={`${field.key}-type`}
-            className="native-select"
             value={field.type}
-            onChange={(e) =>
-              onChange(
-                changeFieldType(field, e.target.value as TemplateField["type"]),
-              )
-            }
-          >
-            {Object.entries(fieldTypeLabels).map(([type, label]) => (
-              <option key={type} value={type}>
-                {label}
-              </option>
-            ))}
-          </select>
+            onValueChange={(type) => onChange(changeFieldType(field, type))}
+            options={Object.entries(fieldTypeLabels).map(([value, label]) => ({
+              value: value as TemplateField["type"],
+              label,
+            }))}
+          />
         </Field>
       </div>
       {selection && (
