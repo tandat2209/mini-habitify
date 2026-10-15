@@ -28,7 +28,7 @@ export function ProgressRing({ ratio }: { ratio: number }) {
         cy="32"
         r="26"
         fill="none"
-        stroke="var(--primary)"
+        stroke="var(--primary-ink, var(--primary))"
         strokeWidth="5"
         strokeLinecap="round"
         strokeDasharray={`${ratio * 163.36} 163.36`}

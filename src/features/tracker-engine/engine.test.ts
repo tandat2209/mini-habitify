@@ -148,3 +148,26 @@ it("keeps future calendar dates incomplete even if the period target is reached"
     ),
   ).toMatchObject({ value: 0, complete: false });
 });
+
+it("keeps structured content and template changes independent of every metric", () => {
+  const basic = [
+    log("2026-10-13", 2, "2026-10-13T09:00:00Z"),
+    log("2026-10-13", 3, "2026-10-13T10:00:00Z"),
+  ];
+  const enriched = basic.map((entry) => ({
+    ...entry,
+    details: { amount: 999, notes: "Content only", items: ["One", "Two"] },
+    template_version_id: "original-version",
+  }));
+  for (const type of ["habit", "counter", "duration", "numeric"] as const) {
+    const configured = { ...tracker, type, target: 3 };
+    const associated = { ...configured, activity_template_id: "new-template" };
+    expect(aggregate(type, enriched)).toBe(aggregate(type, basic));
+    expect(progress(associated, enriched, "2026-10-13")).toEqual(
+      progress(configured, basic, "2026-10-13"),
+    );
+    expect(
+      activityDays([associated], enriched, ["2026-10-12", "2026-10-13"]),
+    ).toEqual(activityDays([configured], basic, ["2026-10-12", "2026-10-13"]));
+  }
+});

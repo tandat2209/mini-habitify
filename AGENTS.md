@@ -10,7 +10,7 @@ At setup, this repository contains the brief and agent guidance only. No app, pa
 
 The app is now implemented locally. See `README.md` for setup and `docs/implementation-roadmap.md` for verification and release gaps. Use `npm run dev`, `npm test`, `npm run typecheck`, `npm run lint`, `npm run test:security`, `npm run test:e2e`, and `npm run build`. Database/browser tests require local Supabase. `npm run db:reset` deletes local data; do not use it against an account with user data without authorization.
 
-Route composition lives in `src/app`; UI in `src/components`; pure calculations in `src/features/tracker-engine`; validated server mutations in `src/features/trackers/actions.ts`; data loading in `src/features/dashboard`; Supabase clients in `src/lib/supabase`. Database types are generated in `src/lib/database.types.ts` from `supabase/migrations`.
+Route composition lives in `src/app`; UI in `src/components`; pure calculations in `src/features/tracker-engine`; preset/widget configuration in `src/features/themes`; history navigation/series in `src/features/history`; validated server mutations in `src/features/trackers/actions.ts`; data loading in `src/features/dashboard`; Supabase clients in `src/lib/supabase`; recovery actions in `src/lib/auth/recovery-actions.ts`. Database types are generated in `src/lib/database.types.ts` from `supabase/migrations`.
 
 Read the implemented policy entries in `docs/decisions.md` before revisiting the original open questions. Styles must keep using the shared engine and mutation contracts. Do not change calculation semantics merely to suit a visualization.
 

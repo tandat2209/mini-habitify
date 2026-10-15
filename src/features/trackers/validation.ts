@@ -1,9 +1,16 @@
 import { z } from "zod";
-export const themes = ["paper", "pastel", "terminal", "brutalist"] as const;
+export const themes = [
+  "paper",
+  "pastel",
+  "terminal",
+  "brutalist",
+  "neumorphism",
+] as const;
 export const presentations = ["calm", "developer", "playful"] as const;
 export const trackerSchema = z
   .object({
     name: z.string().trim().min(1, "Give your tracker a name.").max(80),
+    activity_template_id: z.uuid().nullable().optional(),
     description: z.string().trim().max(500),
     type: z.enum(["habit", "counter", "duration", "numeric"]),
     target: z.number().positive().max(1e9).nullable(),
@@ -52,12 +59,32 @@ export const logSchema = z.object({
   date: trackingDateSchema,
   value: z.number().finite().min(0).max(1e9),
   request_id: z.uuid(),
+  details: z
+    .record(
+      z.string(),
+      z.union([z.string(), z.number().finite(), z.array(z.string())]),
+    )
+    .optional(),
+  template_version_id: z.uuid().nullable().optional(),
 });
 export const preferencesSchema = z.object({
   theme: z.enum(themes),
+  primary_color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Use a six-digit hex color, such as #4f8ec9.")
+    .transform((color) => color.toLowerCase())
+    .nullable()
+    .default(null),
   layout: z.enum(["standard", "compact"]),
   presentation: z.enum(presentations),
   show_activity: z.boolean(),
+  show_summary: z.boolean().default(true),
+  show_recent: z.boolean().default(true),
+  widget_order: z
+    .array(z.enum(["summary", "activity", "recent"]))
+    .length(3)
+    .refine((a) => new Set(a).size === 3, "Include every widget exactly once.")
+    .default(["summary", "activity", "recent"]),
 });
 export const authSchema = z.object({
   email: z.email().max(254),
@@ -73,3 +100,14 @@ export const authSchema = z.object({
 });
 export type Preferences = z.infer<typeof preferencesSchema>;
 export type TrackerInput = z.infer<typeof trackerSchema>;
+
+export const passwordResetSchema = z
+  .object({
+    password: z.string().min(8, "Use at least 8 characters.").max(128),
+    confirm_password: z.string(),
+  })
+  .refine((d) => d.password === d.confirm_password, {
+    message: "Passwords must match.",
+    path: ["confirm_password"],
+  });
+export const recoveryEmailSchema = z.object({ email: z.email().max(254) });

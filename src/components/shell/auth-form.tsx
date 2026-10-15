@@ -97,6 +97,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                 </Field>
               )}
               {!signup && <input type="hidden" name="timezone" value="UTC" />}
+              {!signup && (
+                <Link className="recovery-link" href="/forgot-password">
+                  Forgot password?
+                </Link>
+              )}
               {state.error && (
                 <Alert variant="destructive">
                   <AlertDescription>{state.error}</AlertDescription>

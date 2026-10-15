@@ -15,7 +15,8 @@
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "format": "prettier --write src tests *.ts *.mjs",
-    "format:check": "prettier --check src tests *.ts *.mjs"
+    "format:check": "prettier --check src tests *.ts *.mjs",
+    "test:migrations": "node tests/migrations/replay.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

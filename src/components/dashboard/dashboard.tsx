@@ -10,22 +10,25 @@ import {
   LogOut,
   Sun,
   Check,
-  Clock3,
   ArrowUpRight,
 } from "lucide-react";
 import { Brand } from "@/components/shell/brand";
 import { signOut } from "@/lib/auth/actions";
-import {
-  isScheduled,
-  progress,
-  type Tracker,
-  type Log,
-} from "@/features/tracker-engine/engine";
+import { isScheduled, progress } from "@/features/tracker-engine/engine";
+import { TemplateLibrary } from "@/components/activity-templates/template-library";
+import type {
+  ActivityTracker,
+  ActivityLog,
+  TemplateData,
+} from "@/features/activity-templates/types";
 import type { Preferences } from "@/features/trackers/validation";
-import { Activity, ProgressRing } from "./activity";
+import { SummaryWidget, RecentWidget } from "./widgets";
+import type { WidgetKind } from "@/features/themes/presets";
+import { Activity } from "./activity";
 import { TrackerCard } from "@/components/trackers/tracker-card";
 import { TrackerForm } from "@/components/trackers/tracker-form";
 import { TrackerHistory } from "@/components/trackers/tracker-history";
+import { AppearanceScope } from "@/components/appearance/appearance-scope";
 import { Appearance } from "@/components/appearance/appearance";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,17 +38,18 @@ import {
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty";
-interface Data {
+interface Data extends TemplateData {
   email: string;
   timezone: string;
   today: string;
-  trackers: Tracker[];
-  logs: Log[];
+  trackers: ActivityTracker[];
+  logs: ActivityLog[];
   preferences: Preferences;
 }
 export function Dashboard({ data }: { data: Data }) {
   const [preview, setPreview] = useState(data.preferences);
   const [appearance, setAppearance] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [create, setCreate] = useState(false);
   const [editId, setEditId] = useState<string>();
   const [detailId, setDetailId] = useState<string>();
@@ -66,15 +70,44 @@ export function Dashboard({ data }: { data: Data }) {
   const name = data.email.split("@")[0];
   const detail = data.trackers.find((t) => t.id === detailId);
   const edit = data.trackers.find((t) => t.id === editId);
-  const recent = [...data.logs]
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .slice(0, 5);
+  const visibleWidgets = preview.widget_order.filter((kind) =>
+    kind === "summary"
+      ? preview.show_summary
+      : kind === "activity"
+        ? preview.show_activity
+        : preview.show_recent,
+  );
+  function renderWidget(kind: WidgetKind) {
+    return (
+      <div data-widget={kind} key={kind}>
+        {kind === "summary" ? (
+          <SummaryWidget
+            completed={completed}
+            goalCount={goals.length}
+            trackerCount={active.length}
+            checkIns={
+              data.logs.filter((l) => l.tracking_date === data.today).length
+            }
+          />
+        ) : kind === "activity" ? (
+          <Activity
+            trackers={active}
+            logs={data.logs}
+            today={data.today}
+            presentation={preview.presentation}
+          />
+        ) : (
+          <RecentWidget data={data} />
+        )}
+      </div>
+    );
+  }
   return (
-    <div
-      className="app"
-      data-theme={preview.theme}
-      data-layout={preview.layout}
-      data-presentation={preview.presentation}
+    <AppearanceScope
+      theme={preview.theme}
+      primaryColor={preview.primary_color}
+      layout={preview.layout}
+      presentation={preview.presentation}
     >
       <aside className="sidebar">
         <Brand />
@@ -145,6 +178,13 @@ export function Dashboard({ data }: { data: Data }) {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setTemplatesOpen(true)}
+            >
+              Templates
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setAppearance(true)}
             >
               <Palette data-icon="inline-start" />
@@ -181,39 +221,9 @@ export function Dashboard({ data }: { data: Data }) {
               <Leaf size={54} strokeWidth={1.2} />
             </div>
           </section>
-          <section className="summary" aria-label="Today’s summary">
-            <div className="summary-cell">
-              <ProgressRing
-                ratio={goals.length ? completed / goals.length : 0}
-              />
-              <div>
-                <div className="summary-value">
-                  {completed}
-                  <span className="muted text-lg"> / {goals.length}</span>
-                </div>
-                <div className="summary-caption">goals complete today</div>
-              </div>
-            </div>
-            <div className="summary-cell">
-              <div>
-                <div className="summary-value">{active.length}</div>
-                <div className="summary-caption">
-                  things you’re making time for
-                </div>
-              </div>
-            </div>
-            <div className="summary-cell">
-              <div>
-                <div className="summary-value">
-                  {
-                    data.logs.filter((l) => l.tracking_date === data.today)
-                      .length
-                  }
-                </div>
-                <div className="summary-caption">check-ins today</div>
-              </div>
-            </div>
-          </section>
+          <div className="widget-overview">
+            {visibleWidgets.slice(0, 1).map(renderWidget)}
+          </div>
           <div className="section-head">
             <div>
               <h2>
@@ -289,6 +299,7 @@ export function Dashboard({ data }: { data: Data }) {
                   <TrackerCard
                     key={t.id}
                     tracker={t}
+                    templateData={data}
                     logs={data.logs}
                     today={data.today}
                     onDetails={() => setDetailId(t.id)}
@@ -298,49 +309,7 @@ export function Dashboard({ data }: { data: Data }) {
             </div>
           )}
           <div className="lower-grid">
-            {preview.show_activity && (
-              <Activity
-                trackers={active}
-                logs={data.logs}
-                today={data.today}
-                presentation={preview.presentation}
-              />
-            )}
-            <section className="panel">
-              <div className="panel-title">
-                <h2>Little moments, lately</h2>
-                <Clock3 size={15} className="muted" />
-              </div>
-              {recent.length === 0 ? (
-                <p className="muted text-sm leading-7">
-                  Your check-ins will find a home here.
-                  <br />
-                  Every little moment counts.
-                </p>
-              ) : (
-                recent.map((log) => {
-                  const t = data.trackers.find((t) => t.id === log.tracker_id);
-                  return (
-                    <div className="activity-row" key={log.id}>
-                      <span className="activity-dot" />
-                      <div>
-                        <strong>{t?.name || "Tracker"}</strong>
-                        <div className="muted mt-1">
-                          {t?.type === "habit"
-                            ? "Checked in"
-                            : `${t?.type === "duration" ? log.value / 60 : log.value} ${t?.type === "duration" ? "min" : t?.unit || ""}`}
-                        </div>
-                      </div>
-                      <time>
-                        {log.tracking_date === data.today
-                          ? "Today"
-                          : log.tracking_date}
-                      </time>
-                    </div>
-                  );
-                })
-              )}
-            </section>
+            {visibleWidgets.slice(1).map(renderWidget)}
           </div>
           <p className="footer-note">
             <Check size={12} />
@@ -349,7 +318,12 @@ export function Dashboard({ data }: { data: Data }) {
         </main>
       </div>
       {create && (
-        <TrackerForm open theme={preview.theme} onOpenChange={setCreate} />
+        <TrackerForm
+          open
+          theme={preview.theme}
+          templates={data.templates}
+          onOpenChange={setCreate}
+        />
       )}{" "}
       {edit && (
         <TrackerForm
@@ -357,6 +331,7 @@ export function Dashboard({ data }: { data: Data }) {
           open
           theme={preview.theme}
           tracker={edit}
+          templates={data.templates}
           onOpenChange={(open) => {
             if (!open) setEditId(undefined);
           }}
@@ -365,6 +340,7 @@ export function Dashboard({ data }: { data: Data }) {
       {detail && (
         <TrackerHistory
           tracker={detail}
+          templateData={data}
           logs={data.logs}
           today={data.today}
           theme={preview.theme}
@@ -375,6 +351,13 @@ export function Dashboard({ data }: { data: Data }) {
           }}
         />
       )}
+      {templatesOpen && (
+        <TemplateLibrary
+          data={data}
+          theme={preview.theme}
+          onClose={() => setTemplatesOpen(false)}
+        />
+      )}
       {appearance && (
         <Appearance
           saved={data.preferences}
@@ -383,6 +366,6 @@ export function Dashboard({ data }: { data: Data }) {
           onClose={() => setAppearance(false)}
         />
       )}
-    </div>
+    </AppearanceScope>
   );
 }

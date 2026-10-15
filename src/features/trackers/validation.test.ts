@@ -1,5 +1,10 @@
 import { expect, it } from "vitest";
-import { trackerSchema, logSchema, preferencesSchema } from "./validation";
+import {
+  trackerSchema,
+  logSchema,
+  preferencesSchema,
+  passwordResetSchema,
+} from "./validation";
 const valid = {
   name: "Read",
   description: "",
@@ -58,6 +63,14 @@ it("rejects unknown preferences and preserves independent presentation choices",
       layout: "standard",
       presentation: "playful",
       show_activity: true,
+    }).success,
+  ).toBe(false);
+});
+it("rejects mismatched recovery passwords", () => {
+  expect(
+    passwordResetSchema.safeParse({
+      password: "password-123",
+      confirm_password: "different-123",
     }).success,
   ).toBe(false);
 });

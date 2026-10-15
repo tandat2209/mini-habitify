@@ -8,7 +8,10 @@ import {
   type TrackerInput,
 } from "@/features/trackers/validation";
 import { saveTracker } from "@/features/trackers/actions";
-import type { Tracker } from "@/features/tracker-engine/engine";
+import type {
+  ActivityTracker,
+  ActivityTemplate,
+} from "@/features/activity-templates/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,16 +41,19 @@ const defaults: TrackerInput = {
   schedule: [0, 1, 2, 3, 4, 5, 6],
   icon: "spark",
   color: "sage",
+  activity_template_id: null,
 };
 export function TrackerForm({
   open,
   onOpenChange,
   tracker,
   theme,
+  templates,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tracker?: Tracker;
+  tracker?: ActivityTracker;
+  templates: ActivityTemplate[];
   theme: string;
 }) {
   const router = useRouter();
@@ -62,6 +68,7 @@ export function TrackerForm({
     resolver: zodResolver(trackerSchema),
     defaultValues: tracker ? trackerSchema.parse(tracker) : defaults,
   });
+  const templateId = useWatch({ control, name: "activity_template_id" });
   const type = useWatch({ control, name: "type" });
   const period = useWatch({ control, name: "goal_period" });
   const target = useWatch({ control, name: "target" });
@@ -107,6 +114,30 @@ export function TrackerForm({
                 placeholder="Why does this matter to you?"
                 {...register("description")}
               />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="activity-template">
+                Activity template
+              </FieldLabel>
+              <select
+                id="activity-template"
+                className="native-select"
+                value={templateId ?? ""}
+                onChange={(e) =>
+                  setValue("activity_template_id", e.target.value || null)
+                }
+              >
+                <option value="">No template</option>
+                {templates.map((template) => (
+                  <option value={template.id} key={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+              <p className="muted text-xs">
+                Optional details for future entries. Existing entries keep their
+                recorded template.
+              </p>
             </Field>
             <div className="form-grid">
               <Field>

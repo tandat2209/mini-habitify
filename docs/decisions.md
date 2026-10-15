@@ -51,3 +51,51 @@ User clarification: people such as developers and children may want different wa
 - Tooling: use the installed Next.js 16.4 APIs and generated database types. The production build uses Webpack after a reproducible Turbopack CSS-worker port error in this execution environment.
 
 These policies are implemented and covered by domain, real-database, and browser tests. The earlier open-decision table records the original questions; the entries above supersede those questions for the current implementation. Additional numeric goal directions and a timezone-settings UI remain deferred refinements.
+
+## 2026-10-14 — Configurable experiences, history, and account recovery
+
+- Built-in presets are starting points, not separate tracker models. They apply theme/layout/presentation and all widget settings. Users can customize those fields afterward; no tracking data is passed to or modified by preset application.
+- Dashboard widgets are summary, activity, and recent. All three are stored exactly once, with enabled flags and positions 0–2. The first enabled widget appears above trackers, with the others below. Reordering uses buttons rather than a drag-and-drop builder.
+- `save_dashboard_appearance` validates all three widgets and writes preferences/positions/enabled flags in one transaction under ordinary authenticated RLS. The earlier activity-only RPC remains for compatibility.
+- History navigation chooses a month independently of the entry date. Date filters default to that month and may be adjusted separately. Entries paginate at 20 rows; a chart shows daily engine-aggregated raw activity, rather than period-goal completion. Missing numeric measurements are gaps; future/pre-creation dates are excluded.
+- History pages live at `/today/trackers/[id]`. Ownership comes from the authenticated data query; unavailable or other-user trackers render the not-found page without private data.
+- Password recovery uses Supabase email delivery. Local templates point to `/auth/confirm` with a recovery token hash, and `/auth/callback` supports PKCE defaults. Successful verification creates a session for `/reset-password`. Updating the password requires a validated session and matching 8–128-character passwords, then revokes refresh sessions via global sign-out and returns to login.
+- Recovery redirects use configured `NEXT_PUBLIC_APP_URL`, not request-supplied host headers or arbitrary return URLs. Local Supabase uses the localhost site URL and a checked-in recovery template. Hosted setup must configure the deployed site URL, callback allow-list, and email template.
+- Recovery requests use the same success message whether an account exists. Missing/expired sessions and used/expired links lead to fresh-link instructions. This work does not add social auth, notifications, GitHub integration, or insights.
+
+## 2026-10-14 — Template-aware activity content (Phase 1)
+
+- Reuse `trackers` and `tracker_logs` as activities and check-ins. Content is separate from the pure metric engine; no activity-specific logic, duplicate progress models, subjects, or analytics were introduced.
+- Templates are private to one authenticated user and reusable across that user's trackers. `activity_templates` identifies a template; `activity_template_versions` stores immutable field definitions. Publishing creates a version and updates the current pointer atomically. Historical versions cannot be updated/deleted or reassigned between entries.
+- Six field types are text, number, date, select, multi_select, and string list. Stable keys, unique options, bounds, and strict type/key validation run in Zod/server actions and PostgreSQL validators. Selection option values remain exact rather than being normalized when a version is read; native selection controls set explicit option values. PostgreSQL uses the JavaScript whitespace set for nonblank validation. Semantic types are optional metadata only.
+- A check-in with no details (`{}`) always records progress, including when its template contains required fields. Once any details are submitted, all required fields must be present. Optional empty controls are omitted. An omitted details property during editing preserves content; explicit `{}` clears it.
+- New entries resolve the current version transactionally. Details forms include the expected version and reject stale definitions. Changing/removing the activity template affects future entries only; historical entries edit against their recorded version. Legacy entries remain template-free, even after an association is added.
+- Retain the original four-argument `record_log` RPC. The content-aware RPC returns the saved entry ID and preserves request-ID/habit-date idempotency without overwriting details on retries. Content is changed through explicit entry edits. Archive behavior remains unchanged.
+- The dashboard's immediate progress controls remain available; generic details are a secondary interaction. History displays version-specific labels/values. The Phase 1 template library imports JSON and publishes new versions; the visual template builder remains Phase 3. See [activity-templates.md](activity-templates.md).
+- Local migrations were applied additively, without resetting the application database. A separate disposable database verifies migration replay and pre-existing log preservation. Browser tests can use `PLAYWRIGHT_PORT` to avoid reusing an older app server; recovery tests exercise the delivered email token on the configured test origin.
+
+## 2026-10-15 — Neumorphism appearance theme
+
+- Added Neumorphism as a fifth independent theme, selectable through the existing Appearance preview/save flow. It composes with either layout and all three experiences; it is an appearance option, separate from activity content templates.
+- Use pale gray surfaces, paired light/dark shadows for raised panels and buttons, inset inputs and selected navigation, rounded controls, and pink accents. Styling stays under `data-theme="neumorphism"` and shared semantic tokens. No tracking calculations, mutations, or content schemas changed.
+- Retain text labels, control borders, explicit selected states, pink keyboard outlines, and reduced-motion behavior. Palette contrast is 10.8:1 for primary text, 5.25:1 for secondary text, and at least 5.6:1 for white button text across the pink gradient.
+- A catalog-only additive migration makes the selection persist through the existing authenticated appearance RPC. Existing preferences and logs remain unchanged until the user explicitly saves appearance. No new dependencies or image assets were needed.
+
+## 2026-10-15 — Custom primary colors
+
+- Add an optional per-user `primary_color` override shared across themes. NULL uses the current theme's original colors. Switching themes preserves a chosen override; applying an experience preset or choosing “Use theme default” clears it.
+- Appearance provides a native color picker, editable six-digit hex value, quick color choices, live preview, cancellation, and explicit save. Invalid hex drafts show an error and keep the last valid preview; they cannot be submitted. Values normalize to lowercase.
+- Keep the selected fill exact. Choose black/white button text by contrast and derive a separate accent ink with at least 4.5:1 contrast across the theme's background, card, and muted surfaces. Use that ink for accent text, focus, progress, chart strokes, and chart scale. Contrast-aware borders keep extreme button colors identifiable.
+- A small appearance scope passes the same CSS variables through React context to portalled dialogs. Dashboard, full history, tracker forms, template dialogs, and appearance preview consume one color policy. Default themes retain their original tokens when no override exists.
+- Persist color atomically with existing appearance/widget settings through an invoker RPC that delegates to the existing save operation. Existing appearance RPC signatures remain available and preserve a stored color. A database check and server Zod validation accept only opaque six-digit hex values. User isolation continues through existing preferences RLS.
+- The migration is additive and leaves existing users on their theme defaults. No tracker/log records or calculation semantics are modified.
+
+## 2026-10-15 — Visual template builder before subjects
+
+- Promote visual template authoring ahead of Phase 2 subjects at the user's request. JSON remains a collapsed advanced option, not the primary authoring flow. This supersedes the earlier deferral of the visual builder.
+- Reuse the existing template/version tables, publication action, strict schema, and generic check-in renderer. There is no database migration, new activity-specific logic, nested object engine, or new dependency.
+- New fields receive automatically generated stable keys. Renaming, reordering, or changing a field's type keeps its key; importing/editing existing templates retains their original keys and semantic metadata. Selection types retain options when switching between single and multiple choice; changing to a nonselection type removes options.
+- Users name templates, configure all six existing types, enter choice options, toggle required flags, remove/reorder fields, and preview the result. Shared schema errors identify invalid fields/options. Preview values remain local, sit outside the save form, and are never sent as check-in data.
+- Desktop uses an editor/preview layout with scrollable preview and persistent save controls. Mobile switches between Build form and Preview form. Reordering uses labeled buttons rather than drag-and-drop.
+- “Create template” and “Save changes” use the existing immutable publication path. Existing-template edits disclose: “Changes apply to future check-ins. Previous entries stay unchanged.” Version numbers remain automatic. Closing without saving discards the draft.
+- Advanced JSON import validates before replacing the draft; invalid JSON leaves the visual draft intact. “Load current definition” exposes the current schema for copying. Subjects remain the next separate phase.
