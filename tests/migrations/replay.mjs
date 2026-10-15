@@ -49,6 +49,7 @@ try {
     `
     create schema auth;
     create table auth.users(id uuid primary key, raw_user_meta_data jsonb not null default '{}');
+    create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema public,auth to anon,authenticated;
     grant execute on function auth.uid() to anon,authenticated;
@@ -76,10 +77,11 @@ try {
       if (select count(*) from public.tracker_logs) <> 1 then raise exception 'Legacy idempotency changed'; end if;
       if (select count(*) from public.activity_template_versions) <> 1 then raise exception 'Template publication failed'; end if;
     end $$;
+    ${readFileSync("tests/migrations/mcp-authorization.sql", "utf8")}
   `,
   );
   console.log(
-    `Passed: ${files.length} migrations replayed; pre-upgrade log unchanged; legacy RPC, edits, and template publication work.`,
+    `Passed: ${files.length} migrations replayed; pre-upgrade log unchanged; legacy RPC, edits, template publication and OAuth RLS boundaries work.`,
   );
 } finally {
   if (created) sql("postgres", `drop database ${database};`);

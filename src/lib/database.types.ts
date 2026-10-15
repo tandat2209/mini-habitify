@@ -156,6 +156,62 @@ export type Database = {
           },
         ];
       };
+      mcp_connections: {
+        Row: {
+          can_write: boolean;
+          client_id: string;
+          client_name: string;
+          created_at: string;
+          grant_id: string;
+          resource: string;
+          revoked_at: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          can_write?: boolean;
+          client_id: string;
+          client_name: string;
+          created_at?: string;
+          grant_id?: string;
+          resource: string;
+          revoked_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          can_write?: boolean;
+          client_id?: string;
+          client_name?: string;
+          created_at?: string;
+          grant_id?: string;
+          resource?: string;
+          revoked_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      mcp_request_limits: {
+        Row: {
+          client_id: string;
+          requests: number;
+          user_id: string;
+          window_start: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          client_id: string;
+          requests: number;
+          user_id: string;
+          window_start: string;
+        };
+        Update: {
+          client_id?: string;
+          requests?: number;
+          user_id?: string;
+          window_start?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -363,6 +419,12 @@ export type Database = {
     };
     Functions: {
       activity_content_trim: { Args: { p_text: string }; Returns: string };
+      consume_mcp_request: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      mcp_access_token_hook: { Args: { event: Json }; Returns: Json };
+      mcp_permission: { Args: { p_write?: boolean }; Returns: boolean };
       publish_activity_template: {
         Args: {
           p_description?: string;

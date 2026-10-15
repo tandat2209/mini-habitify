@@ -6,44 +6,24 @@ import {
   fieldsSchema,
 } from "@/features/activity-templates/validation";
 import { requireSession } from "@/lib/auth/session";
-import { trackerSchema, logSchema, preferencesSchema } from "./validation";
+import { logSchema, preferencesSchema } from "./validation";
+export type { MutationResult } from "./service";
 import {
-  dateInTimezone,
-  isScheduled,
-  type Tracker,
-} from "@/features/tracker-engine/engine";
-export interface MutationResult {
-  error?: string;
-  success?: boolean;
-  logId?: string;
-  fieldErrors?: Record<string, string>;
-}
+  saveTrackerWithContext,
+  recordLogWithContext,
+  type MutationResult,
+} from "./service";
 export async function saveTracker(
   input: unknown,
   id?: string,
 ): Promise<MutationResult> {
-  const parsed = trackerSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-  if (id && !z.uuid().safeParse(id).success)
-    return { error: "Invalid tracker." };
-  const { client, user } = await requireSession();
-  const result = id
-    ? await client
-        .from("trackers")
-        .update(parsed.data)
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .select("id")
-        .single()
-    : await client
-        .from("trackers")
-        .insert({ ...parsed.data, user_id: user.id })
-        .select("id")
-        .single();
-  if (result.error)
-    return { error: "Could not save tracker. Please try again." };
-  revalidatePath("/today", "layout");
-  return { success: true };
+  const result = await saveTrackerWithContext(
+    await requireSession(),
+    input,
+    id,
+  );
+  if (result.success) revalidatePath("/today", "layout");
+  return result;
 }
 export async function archiveTracker(id: string): Promise<MutationResult> {
   if (!z.uuid().safeParse(id).success) return { error: "Invalid tracker." };
@@ -60,81 +40,9 @@ export async function archiveTracker(id: string): Promise<MutationResult> {
   return { success: true };
 }
 export async function recordLog(input: unknown): Promise<MutationResult> {
-  const parsed = logSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const { client, user } = await requireSession();
-  const [profile, tracker] = await Promise.all([
-    client.from("profiles").select("timezone").eq("id", user.id).single(),
-    client
-      .from("trackers")
-      .select("*")
-      .eq("id", parsed.data.tracker_id)
-      .eq("user_id", user.id)
-      .is("archived_at", null)
-      .single(),
-  ]);
-  if (profile.error || tracker.error) return { error: "Tracker unavailable." };
-  const today = dateInTimezone(new Date(), profile.data.timezone);
-  if (
-    parsed.data.date > today ||
-    parsed.data.date <
-      dateInTimezone(new Date(tracker.data.created_at), profile.data.timezone)
-  )
-    return { error: "Choose a date within this tracker’s history." };
-  if (!isScheduled(tracker.data as Tracker, parsed.data.date))
-    return { error: "This tracker is not scheduled on that day." };
-  let versionId: string | null = null;
-  let fields: ReturnType<typeof fieldsSchema.parse> = [];
-  if (tracker.data.activity_template_id) {
-    const template = await client
-      .from("activity_templates")
-      .select("current_version_id")
-      .eq("id", tracker.data.activity_template_id)
-      .eq("user_id", user.id)
-      .single();
-    if (template.error || !template.data.current_version_id)
-      return { error: "Template unavailable." };
-    versionId = template.data.current_version_id;
-    const version = await client
-      .from("activity_template_versions")
-      .select("fields")
-      .eq("id", versionId)
-      .eq("user_id", user.id)
-      .single();
-    if (version.error) return { error: "Template unavailable." };
-    fields = fieldsSchema.parse(version.data.fields);
-  }
-  if (
-    parsed.data.details &&
-    Object.keys(parsed.data.details).length > 0 &&
-    parsed.data.template_version_id !== versionId
-  )
-    return {
-      error: "Template changed. Review its current fields before saving.",
-    };
-  const details = validateDetails(fields, parsed.data.details ?? {});
-  if (!details.success) return detailsError(details.error);
-  const { error, data } = await client.rpc("record_log_with_details", {
-    p_tracker: parsed.data.tracker_id,
-    p_date: parsed.data.date,
-    p_value: parsed.data.value,
-    p_id: parsed.data.request_id,
-    p_details: details.data,
-    p_template_version:
-      parsed.data.details && Object.keys(parsed.data.details).length > 0
-        ? (versionId ?? undefined)
-        : undefined,
-  });
-  if (error)
-    return {
-      error:
-        error.message ===
-        "Template changed. Review its current fields before saving."
-          ? error.message
-          : "Could not save check-in. Please try again.",
-    };
-  revalidatePath("/today", "layout");
-  return { success: true, logId: data };
+  const result = await recordLogWithContext(await requireSession(), input);
+  if (result.success) revalidatePath("/today", "layout");
+  return result;
 }
 export async function deleteLog(id: string): Promise<MutationResult> {
   if (!z.uuid().safeParse(id).success) return { error: "Invalid entry." };

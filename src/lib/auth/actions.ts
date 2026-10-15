@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { consentReturnPath } from "@/features/mcp/security";
 import { authSchema } from "@/features/trackers/validation";
 export interface AuthState {
   error?: string;
@@ -37,7 +38,7 @@ export async function authenticate(
     if (error)
       return { error: "Could not sign in. Check your email and password." };
   }
-  redirect("/today");
+  redirect(consentReturnPath(data.get("authorization_id")));
 }
 export async function signOut() {
   const client = await createClient();

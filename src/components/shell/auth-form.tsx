@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+export function AuthForm({
+  mode,
+  authorizationId,
+}: {
+  mode: "login" | "signup";
+  authorizationId?: string;
+}) {
   const [state, action, pending] = useActionState(
     authenticate.bind(null, mode),
     {},
@@ -58,6 +64,13 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               : "Your trackers and your progress are waiting for you."}
           </p>
           <form action={action}>
+            {authorizationId && (
+              <input
+                type="hidden"
+                name="authorization_id"
+                value={authorizationId}
+              />
+            )}
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email address</FieldLabel>
@@ -125,7 +138,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </form>
           <p className="auth-link">
             {signup ? "Already have an account?" : "New around here?"}{" "}
-            <Link href={signup ? "/login" : "/signup"}>
+            <Link
+              href={`${signup ? "/login" : "/signup"}${authorizationId ? `?authorization_id=${encodeURIComponent(authorizationId)}` : ""}`}
+            >
               {signup ? "Sign in" : "Create account"}
             </Link>
           </p>

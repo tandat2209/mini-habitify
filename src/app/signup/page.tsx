@@ -1,4 +1,9 @@
 import { AuthForm } from "@/components/shell/auth-form";
-export default function Signup() {
-  return <AuthForm mode="signup" />;
+export default async function Signup({
+  searchParams,
+}: {
+  searchParams: Promise<{ authorization_id?: string }>;
+}) {
+  const { authorization_id } = await searchParams;
+  return <AuthForm mode="signup" authorizationId={authorization_id} />;
 }

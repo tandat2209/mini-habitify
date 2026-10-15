@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import { Cable } from "lucide-react";
 import { useState } from "react";
 import {
   CalendarDays,
@@ -146,6 +148,10 @@ export function Dashboard({ data }: { data: Data }) {
               <Palette size={18} />
               <span>Make it yours</span>
             </button>
+            <Link href="/settings/connections" aria-label="Connected apps">
+              <Cable size={18} />
+              <span>Connected apps</span>
+            </Link>
           </nav>
         </div>
         <div className="sidebar-bottom">
