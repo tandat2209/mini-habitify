@@ -5,6 +5,8 @@ import { supabaseConfig } from "@/lib/supabase/config";
 import { mcpConfig, allowedMcpOrigin } from "@/features/mcp/config";
 import { validMcpClaims } from "@/features/mcp/security";
 import { createMcpServer } from "@/features/mcp/server";
+import { gatewayEnabled } from "@/features/mcp/gateway/store";
+import { resolveGatewayToken } from "@/features/mcp/gateway/model";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 function headers(request: Request) {
@@ -32,7 +34,7 @@ async function handle(request: Request) {
   const unauthorized = () => {
     h.set(
       "WWW-Authenticate",
-      `Bearer resource_metadata="${config.metadata}", scope="email"`,
+      `Bearer resource_metadata="${config.metadata}", scope="${gatewayEnabled() ? "tracking:read" : "email"}"`,
     );
     return Response.json(
       { error: "Connect using OAuth to access mini-habitify." },
@@ -40,16 +42,30 @@ async function handle(request: Request) {
     );
   };
   if (!match) return unauthorized();
+  let gateway: { accessToken: string; canWrite: boolean } | null = null;
+  if (match[1].startsWith("mh_")) {
+    if (!gatewayEnabled()) return unauthorized();
+    try {
+      gateway = await resolveGatewayToken(match[1]);
+    } catch {
+      return Response.json(
+        { error: "Authorization is temporarily unavailable." },
+        { status: 503, headers: h },
+      );
+    }
+    if (!gateway) return unauthorized();
+  }
+  const accessToken = gateway?.accessToken ?? match[1];
   const { url, key } = supabaseConfig();
   const client = createClient<Database>(url, key, {
-    accessToken: async () => match[1],
+    accessToken: async () => accessToken,
     auth: { persistSession: false, autoRefreshToken: false },
   });
   // Separate verifier: accessToken-mode clients deliberately disable auth APIs.
   const verifier = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data, error } = await verifier.auth.getClaims(match[1]);
+  const { data, error } = await verifier.auth.getClaims(accessToken);
   if (
     error ||
     !data ||
@@ -93,7 +109,7 @@ async function handle(request: Request) {
     );
   const server = createMcpServer(
     { client, user: { id: data.claims.sub } },
-    write.data,
+    write.data && (gateway?.canWrite ?? true),
   );
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,

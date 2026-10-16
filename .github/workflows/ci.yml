@@ -49,6 +49,7 @@ jobs:
               "",
             ].join("\n"), { mode: 0o600 });
           '
+      - run: node scripts/configure-local-mcp-gateway.mjs
       - run: npm run test:security
       - run: npm run test:migrations
       - run: npm run build

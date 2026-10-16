@@ -78,6 +78,7 @@ try {
       if (select count(*) from public.activity_template_versions) <> 1 then raise exception 'Template publication failed'; end if;
     end $$;
     ${readFileSync("tests/migrations/mcp-authorization.sql", "utf8")}
+    ${readFileSync("tests/migrations/mcp-gateway.sql", "utf8")}
   `,
   );
   console.log(

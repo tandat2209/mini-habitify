@@ -7,6 +7,7 @@ import { DisconnectForm } from "@/components/connections/disconnect-form";
 import { Button } from "@/components/ui/button";
 import { preferencesSchema } from "@/features/trackers/validation";
 import { mcpConfig } from "@/features/mcp/config";
+import { gatewayEnabled } from "@/features/mcp/gateway/store";
 export default async function Connections() {
   const { client, user } = await requireSession();
   const [connections, grants, prefs] = await Promise.all([
@@ -82,7 +83,10 @@ export default async function Connections() {
           />
           <p className="muted text-sm mt-3">
             No API key needed. Your assistant must support remote MCP with
-            OAuth. If asked for a scope, use “email”.
+            OAuth.{" "}
+            {gatewayEnabled()
+              ? "Permissions are requested automatically when you connect."
+              : "If asked for a scope, use “email”."}
           </p>
         </section>
         <section className="panel">

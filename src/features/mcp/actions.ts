@@ -5,8 +5,10 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
 import { authorizationIdSchema, supportedMcpScope } from "./security";
 import { mcpConfig } from "./config";
+import { gatewayConsent } from "./gateway/consent";
 export interface ConnectionState {
   error?: string;
+  redirectUrl?: string;
 }
 export async function decideConnection(
   authorizationId: string,
@@ -29,13 +31,22 @@ export async function decideConnection(
     });
     if (denied.error || !denied.data)
       return { error: "Could not decline the request. Please try again." };
-    redirect(denied.data.redirect_url);
+    return { redirectUrl: denied.data.redirect_url };
   }
   if (!supportedMcpScope(details.data.scope))
     return {
       error:
         "This connection requires the email OAuth scope only. Remove openid and other scopes in your assistant and reconnect.",
     };
+  let gateway;
+  try {
+    gateway = await gatewayConsent(details.data.client.id, authorizationId);
+  } catch {
+    return {
+      error:
+        "This connection request expired. Start again from your assistant.",
+    };
+  }
   const clientId = details.data.client.id;
   const grantId = crypto.randomUUID();
   const saved = await client.from("mcp_connections").upsert({
@@ -44,7 +55,7 @@ export async function decideConnection(
     client_name: details.data.client.name.slice(0, 200) || "Unnamed app",
     resource: mcpConfig().resource,
     grant_id: grantId,
-    can_write: form.get("can_write") === "on",
+    can_write: form.get("can_write") === "on" && (gateway?.canWrite ?? true),
     revoked_at: null,
     created_at: new Date().toISOString(),
   });
@@ -66,7 +77,7 @@ export async function decideConnection(
     };
   }
   revalidatePath("/settings/connections");
-  redirect(approved.data.redirect_url);
+  return { redirectUrl: approved.data.redirect_url };
 }
 export async function disconnectApp(
   clientId: string,

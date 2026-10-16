@@ -354,7 +354,11 @@ test("OAuth consent → MCP tracker/check-in → real RLS → revoke", async ({
     await request.get("/.well-known/oauth-protected-resource/mcp")
   ).json();
   expect(metadata.resource).toBe(`${baseURL}/mcp`);
-  expect(metadata.scopes_supported).toEqual(["email"]);
+  expect(metadata.scopes_supported).toEqual(
+    process.env.MCP_GATEWAY_DATABASE_URL
+      ? ["tracking:read", "tracking:write"]
+      : ["email"],
+  );
   const tooLarge = await request.post("/mcp", {
     headers: {
       Authorization: `Bearer ${read.access_token}`,

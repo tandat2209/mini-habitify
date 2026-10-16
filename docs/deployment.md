@@ -91,3 +91,15 @@ The live login/signup pages load, and unauthenticated `/today` requests redirect
 - [Supabase migrations](https://supabase.com/docs/guides/deployment/database-migrations)
 - [Supabase production checklist](https://supabase.com/docs/guides/deployment/going-into-prod)
 - [Supabase custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp)
+
+## Schema-dependent feature releases
+
+Pushing `main` triggers Vercel automatically. Before pushing code that requires new tables/functions/columns, review `supabase migration list --linked` and `supabase db push --linked --dry-run`, apply the approved additive migrations, and verify remote history. CI never applies production migrations. Keep optional authentication capabilities disabled until their migrations, hooks, and release checks are ready.
+
+On 2026-10-15, applied `202610150003_mcp_oauth.sql` to fix the production Connected apps page after commit `178de36` deployed ahead of its schema. The signed-in page now renders. Hosted OAuth/hook activation remains pending; this repair did not enable external clients or reset user data.
+
+## MCP OAuth gateway rollout
+
+The new application issuer requires additive migration `202610160001_mcp_gateway.sql` plus two server-only settings: `MCP_GATEWAY_DATABASE_URL` (restricted custom login, verified TLS/pooler) and `MCP_GATEWAY_ENCRYPTION_KEY` (persistent base64 32-byte key). Follow [gateway deployment](mcp.md#gateway-deployment). Provision the role password outside migrations/source control. Keep Supabase OAuth, DCR, the consent path, and the access-token hook enabled.
+
+Apply/verify the migration before pushing main, then configure both settings and deploy. Missing settings retain legacy email-only discovery; partial setup does not enable the gateway. Verify protected-resource and application AS discovery, recreate cached ChatGPT links, remove Cursor's old static Supabase auth override, and check real read/write/refresh/disconnect flows. On 2026-10-16, applied and verified the additive gateway migration before pushing the application update. All 11 local/remote migration versions match. The gateway login and encryption key are not configured; activation and actual hosted client compatibility remain unverified.

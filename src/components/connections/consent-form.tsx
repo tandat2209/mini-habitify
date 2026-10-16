@@ -1,8 +1,8 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { ShieldCheck, Eye, PencilLine } from "lucide-react";
 import { supportedMcpScope } from "@/features/mcp/security";
-import { decideConnection } from "@/features/mcp/actions";
+import type { ConnectionState } from "@/features/mcp/actions";
 import { Button } from "@/components/ui/button";
 export function ConsentForm({
   authorizationId,
@@ -10,17 +10,47 @@ export function ConsentForm({
   redirectUri,
   email,
   scope,
+  displayScope,
+  canRequestWrite = true,
 }: {
   authorizationId: string;
   name: string;
   redirectUri: string;
   email: string;
   scope: string;
+  displayScope?: string;
+  canRequestWrite?: boolean;
 }) {
   const [state, action, pending] = useActionState(
-    decideConnection.bind(null, authorizationId),
+    async (
+      _previous: ConnectionState,
+      form: FormData,
+    ): Promise<ConnectionState> => {
+      try {
+        const response = await fetch("/oauth/mcp/decision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            authorizationId,
+            decision: form.get("decision") || "deny",
+            canWrite: form.get("can_write") === "on",
+          }),
+        });
+        if (!response.ok)
+          return {
+            error:
+              "Could not complete this request. Start again from your assistant.",
+          };
+        return (await response.json()) as ConnectionState;
+      } catch {
+        return { error: "Could not complete this request. Please try again." };
+      }
+    },
     {},
   );
+  useEffect(() => {
+    if (state.redirectUrl) window.location.assign(state.redirectUrl);
+  }, [state.redirectUrl]);
   return (
     <section className="panel connection-consent">
       <ShieldCheck className="text-primary mb-4" size={32} aria-hidden />
@@ -35,22 +65,24 @@ export function ConsentForm({
         <div>
           <strong>Read your tracking data</strong>
           <p className="muted">
-            Trackers, check-ins, journal details, activity templates, timezone,
-            and basic account identity.
+            Trackers, check-ins, journal details, activity templates, and
+            timezone.
           </p>
         </div>
       </div>
-      <label className="connection-permission connection-write">
-        <input type="checkbox" name="can_write" form="oauth-consent" />
-        <PencilLine size={20} aria-hidden />
-        <span>
-          <strong>Allow creating and managing trackers and check-ins</strong>
-          <span className="muted block">
-            Optional. This permits tracking changes through the assistant and
-            API. It does not permit account, appearance, or template changes.
+      {canRequestWrite && (
+        <label className="connection-permission connection-write">
+          <input type="checkbox" name="can_write" form="oauth-consent" />
+          <PencilLine size={20} aria-hidden />
+          <span>
+            <strong>Allow creating and managing trackers and check-ins</strong>
+            <span className="muted block">
+              Optional. This permits tracking changes through the assistant and
+              API. It does not permit account, appearance, or template changes.
+            </span>
           </span>
-        </span>
-      </label>
+        </label>
+      )}
       <p className="muted text-sm">
         Only connect apps you trust. App names are provided by their developers.
         You can disconnect at any time in Connected apps.
@@ -67,8 +99,8 @@ export function ConsentForm({
             <dd className="muted">{redirectUri}</dd>
           </div>
           <div>
-            <dt>Identity scopes</dt>
-            <dd className="muted">{scope || "None"}</dd>
+            <dt>Requested scopes</dt>
+            <dd className="muted">{displayScope ?? (scope || "None")}</dd>
           </div>
         </dl>
       </details>
