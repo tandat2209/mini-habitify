@@ -4,14 +4,35 @@ The remote MCP endpoint is `/mcp`. Connected apps live at `/settings/connections
 
 ## Tools
 
-- `list_trackers`: active or archived trackers, paginated.
+- `list_trackers`: full tracker configurations, paginated; archives optional.
 - `get_tracker`: tracker configuration, local today/timezone, current detail schema/version.
-- `list_templates`: reusable templates, paginated.
+- `list_templates`: reusable template identities, paginated; archives hidden unless requested.
+- `get_template`: template metadata and current immutable field definitions/version ID.
+- `create_template`: generic structured fields; returns `templateId`.
+- `update_template`: partial metadata changes and stable-key field upserts/removals. Requires `expected_version_id` from `get_template`; rejects stale writes.
+- `delete_template`: safe archival. Retains versions, associations, and history; existing trackers can still record, but new associations/schema edits are blocked.
 - `get_history`: paginated logs with original template versions.
-- `create_tracker`: defaults for all four tracking types, using existing validation.
-- `record_check_in`: optional structured details, current template version checking, scheduled local dates, and caller-provided retry UUIDs. Durations use seconds.
+- `create_tracker`: defaults for all four tracking types and optional `activity_template_id`.
+- `update_tracker`: sparse updates to name, description, target, unit, period, weekdays, icon, color, template association, and archive state. Omitted settings remain unchanged; type is immutable. Set template ID to `null` to detach.
+- `record_check_in` and `record_checkin`: compatible aliases with optional structured details, current version checking, scheduled local dates, and caller-provided retry UUIDs. Durations use seconds.
+- `update_checkin`: sparse corrections to date/value/details, validated against the recorded historical version. Detail keys merge; `remove_detail_keys` explicitly removes content. Omitted content remains unchanged.
 
-Creation is not idempotent. Check-in callers must generate one request UUID for each intended entry and reuse it for retries. Habit uniqueness remains enforced by the existing engine/database contracts. Editing/archiving/deleting tools and template publishing are not exposed in this first tool set. The optional write permission authorizes management of tracking data through Supabase's API too; it does not authorize account, preferences, widgets, or template mutations.
+Creation is not idempotent. Check-in callers must generate one request UUID for each intended entry and reuse it for retries. Habit uniqueness remains enforced by the existing engine/database contracts. New write consent includes template management. Existing grants retain their tracker/check-in permissions but cannot write templates until the user reconnects and approves the expanded consent. The database checks `can_manage_templates` in addition to write access. Account, appearance, and widget settings remain outside these tracking tools.
+
+### Example: DDIA without app configuration
+
+1. `create_template` with a name such as Book Reading and stable keys `chapters` (`text`), `takeaway` (`textarea`), and `understanding` (`rating`, `config: {"min":1,"max":5}`). Mark fields required only when requested. All generic field types remain available; there are no reading-specific models.
+2. `get_template` with the returned `templateId` to obtain `version.id` and fields.
+3. `create_tracker` with `name: "Read DDIA"`, `type: "habit"`, `target: 3`, `goal_period: "weekly"`, and `activity_template_id`. All seven weekdays remain eligible unless the user specifies particular days; three times weekly is a period goal, not three arbitrarily selected weekdays.
+4. `record_checkin` with tracker ID, `value: 1`, a generated `request_id`, `template_version_id`, and `details: {"chapters":"Chapter 7","takeaway":"Transaction isolation","understanding":4}`. The date can be omitted for local today.
+5. To add questions later, read the template and call `update_template` with its `expected_version_id` and `upsert_fields: [{"key":"questions","label":"Questions I still have","type":"textarea"}]`. Existing fields remain. Read again after a stale-version error.
+6. Use `get_history` and `update_checkin` to correct an old understanding score. Its original schema still applies even if the current template now has additional required fields.
+
+### Release steps for agent management
+
+Apply migrations `202610160002_agent_management.sql` and `202610160003_template_consent.sql` **before** deploying the matching code. These are additive; do not reset user data. Refresh the assistant's discovered tool catalog after deployment. Older connections must reconnect once to approve template management; read-only connections remain read-only. This initial sign-in/consent step is required, but subsequent habit/template configuration is conversational.
+
+The local Playwright gateway workflow exercises the actual MCP HTTP endpoint, opaque OAuth tokens, RLS, template publication, weekly habit creation, content validation, partial corrections, stale updates, safe archival, and refresh persistence. It drives explicit tool calls, so actual ChatGPT natural-language tool selection and the deployed plugin still require a hosted acceptance run. In ChatGPT, reconnect and run the DDIA acceptance prompt, then ask to add a questions field, change the weekly goal, and correct an earlier check-in. Verify each using the read tools.
 
 ## MCP OAuth gateway
 

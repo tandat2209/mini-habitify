@@ -79,6 +79,7 @@ export type Database = {
       };
       activity_templates: {
         Row: {
+          archived_at: string | null;
           created_at: string;
           current_version_id: string | null;
           description: string;
@@ -89,6 +90,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          archived_at?: string | null;
           created_at?: string;
           current_version_id?: string | null;
           description?: string;
@@ -98,6 +100,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          archived_at?: string | null;
           created_at?: string;
           current_version_id?: string | null;
           description?: string;
@@ -158,6 +161,7 @@ export type Database = {
       };
       mcp_connections: {
         Row: {
+          can_manage_templates: boolean;
           can_write: boolean;
           client_id: string;
           client_name: string;
@@ -169,6 +173,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          can_manage_templates?: boolean;
           can_write?: boolean;
           client_id: string;
           client_name: string;
@@ -179,6 +184,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          can_manage_templates?: boolean;
           can_write?: boolean;
           client_id?: string;
           client_name?: string;
@@ -425,6 +431,10 @@ export type Database = {
       };
       mcp_access_token_hook: { Args: { event: Json }; Returns: Json };
       mcp_permission: { Args: { p_write?: boolean }; Returns: boolean };
+      mcp_template_permission: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       publish_activity_template: {
         Args: {
           p_description?: string;
@@ -481,6 +491,16 @@ export type Database = {
           p_widgets: Json;
         };
         Returns: undefined;
+      };
+      update_activity_template: {
+        Args: {
+          p_description?: string;
+          p_expected_version: string;
+          p_fields?: Json;
+          p_name?: string;
+          p_template: string;
+        };
+        Returns: string;
       };
       validate_activity_details: {
         Args: { p_details: Json; p_fields: Json };

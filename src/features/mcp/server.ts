@@ -2,15 +2,28 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
   saveTrackerWithContext,
+  updateTrackerWithContext,
+  updateCheckinWithContext,
   recordLogWithContext,
   type TrackerContext,
 } from "@/features/trackers/service";
 import { dateInTimezone } from "@/features/tracker-engine/engine";
 import {
   trackerSchema,
+  trackerPatchSchema,
+  checkinPatchSchema,
   logSchema,
   trackingDateSchema,
 } from "@/features/trackers/validation";
+import {
+  templateSchema,
+  templatePatchSchema,
+} from "@/features/activity-templates/validation";
+import {
+  publishTemplateWithContext,
+  updateTemplateWithContext,
+  archiveTemplateWithContext,
+} from "@/features/activity-templates/service";
 function result(data: unknown, isError = false) {
   return {
     content: [{ type: "text" as const, text: JSON.stringify(data) }],
@@ -23,7 +36,7 @@ const pagination = {
 };
 export function createMcpServer(context: TrackerContext, canWrite: boolean) {
   const { client, user } = context;
-  const server = new McpServer({ name: "mini-habitify", version: "1.0.0" });
+  const server = new McpServer({ name: "mini-habitify", version: "1.1.0" });
   server.registerTool(
     "list_trackers",
     {
@@ -105,17 +118,22 @@ export function createMcpServer(context: TrackerContext, canWrite: boolean) {
     {
       description:
         "List reusable activity templates. Templates define optional structured content independently of tracking metrics.",
-      inputSchema: pagination,
+      inputSchema: {
+        ...pagination,
+        include_archived: z.boolean().default(false),
+      },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
-    async ({ offset, limit }) => {
-      const { data, error } = await client
+    async ({ offset, limit, include_archived }) => {
+      let query = client
         .from("activity_templates")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at")
         .order("id")
         .range(offset, offset + limit - 1);
+      if (!include_archived) query = query.is("archived_at", null);
+      const { data, error } = await query;
       return error
         ? result({ error: "Could not load templates." }, true)
         : result({
@@ -177,7 +195,7 @@ export function createMcpServer(context: TrackerContext, canWrite: boolean) {
     "create_tracker",
     {
       description:
-        "Create a tracker after the user requests it. Habit defaults to a daily completion target of 1; counters/durations/numeric default to no target. Duration values/targets are seconds. Schedule uses Sunday=0 through Saturday=6. Does not modify existing trackers.",
+        "Create a tracker after the user requests it. Habit defaults to a daily completion target of 1; counters/durations/numeric default to no target. Duration values/targets are seconds. Schedule uses Sunday=0 through Saturday=6. Set activity_template_id from list_templates/get_template to collect structured details. For three times per week use type=habit, target=3, goal_period=weekly, and all seven schedule days unless the user requests specific weekdays. Does not modify existing trackers.",
       inputSchema: z
         .object(trackerSchema.shape)
         .partial()
@@ -212,14 +230,147 @@ export function createMcpServer(context: TrackerContext, canWrite: boolean) {
       return result(saved, !saved.success);
     },
   );
+  for (const toolName of ["record_check_in", "record_checkin"])
+    server.registerTool(
+      toolName,
+      {
+        description:
+          "Record progress for an existing tracker. Obtain tracker ID and current template fields first. Value is 1 for a habit, seconds for duration, or the counter/measurement value. Date defaults to today in the user's timezone. Details are optional. REQUIRED request_id: generate a UUID once per intended check-in and reuse it for retries to avoid duplicate progress.",
+        inputSchema: logSchema
+          .omit({ date: true })
+          .extend({ date: trackingDateSchema.optional() })
+          .strict(),
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async (input) => {
+        if (!canWrite)
+          return result(
+            { error: "This connection has read-only access." },
+            true,
+          );
+        const profile = await client
+          .from("profiles")
+          .select("timezone")
+          .eq("id", user.id)
+          .single();
+        if (profile.error)
+          return result({ error: "Could not load timezone." }, true);
+        const saved = await recordLogWithContext(context, {
+          ...input,
+          date: input.date ?? dateInTimezone(new Date(), profile.data.timezone),
+        });
+        return result(saved, !saved.success);
+      },
+    );
   server.registerTool(
-    "record_check_in",
+    "get_template",
     {
       description:
-        "Record progress for an existing tracker. Obtain tracker ID and current template fields first. Value is 1 for a habit, seconds for duration, or the counter/measurement value. Date defaults to today in the user's timezone. Details are optional. REQUIRED request_id: generate a UUID once per intended check-in and reuse it for retries to avoid duplicate progress.",
-      inputSchema: logSchema
-        .omit({ date: true })
-        .extend({ date: trackingDateSchema.optional() })
+        "Retrieve a reusable template, its current immutable version ID, and complete generic field definitions. Read before associating a template or editing it. Archived templates remain readable for history.",
+      inputSchema: { template_id: z.uuid() },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    async ({ template_id }) => {
+      const template = await client
+        .from("activity_templates")
+        .select("*")
+        .eq("id", template_id)
+        .eq("user_id", user.id)
+        .single();
+      if (template.error || !template.data.current_version_id)
+        return result({ error: "Template unavailable." }, true);
+      const version = await client
+        .from("activity_template_versions")
+        .select("*")
+        .eq("id", template.data.current_version_id)
+        .eq("user_id", user.id)
+        .single();
+      return version.error
+        ? result({ error: "Template version unavailable." }, true)
+        : result({ template: template.data, version: version.data });
+    },
+  );
+  server.registerTool(
+    "create_template",
+    {
+      description:
+        "Create a private reusable structured template when requested. Define generic fields with stable keys, labels, types and optional required flags. Types: text, textarea, number, rating (config.min/max integer bounds), date, select/multi_select (options), list (strings). Returns templateId; call get_template for the version ID, then create_tracker with activity_template_id. Content fields do not alter progress metrics.",
+      inputSchema: templateSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (input) => {
+      if (!canWrite)
+        return result({ error: "This connection has read-only access." }, true);
+      const saved = await publishTemplateWithContext(context, input);
+      return result(saved, !saved.success);
+    },
+  );
+  server.registerTool(
+    "update_template",
+    {
+      description:
+        "Partially edit a template after get_template. Pass its current version ID as expected_version_id; reread on a stale-version error. upsert_fields adds/replaces only the named stable keys and preserves all other fields. Remove fields only via remove_field_keys after the user requests removal. Each save publishes an immutable version for future check-ins; historical entries retain their original fields/data. Omitted name/description stay unchanged.",
+      inputSchema: z
+        .object(templatePatchSchema.shape)
+        .extend({ template_id: z.uuid(), expected_version_id: z.uuid() })
+        .strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ template_id, expected_version_id, ...patch }) => {
+      if (!canWrite)
+        return result({ error: "This connection has read-only access." }, true);
+      const saved = await updateTemplateWithContext(
+        context,
+        template_id,
+        expected_version_id,
+        patch,
+      );
+      return result(saved, !saved.success);
+    },
+  );
+  server.registerTool(
+    "delete_template",
+    {
+      description:
+        "Safely archive a template when the user asks to remove it. Never deletes field versions or check-in history. Hides it from default discovery and prevents new tracker associations or schema edits. Existing trackers keep their association and can still record against it; detach with update_tracker if requested.",
+      inputSchema: { template_id: z.uuid() },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ template_id }) => {
+      if (!canWrite)
+        return result({ error: "This connection has read-only access." }, true);
+      const saved = await archiveTemplateWithContext(context, template_id);
+      return result(saved, !saved.success);
+    },
+  );
+  server.registerTool(
+    "update_tracker",
+    {
+      description:
+        "Partially update an existing tracker after get_tracker. Send only changed settings; omitted values are preserved. activity_template_id=null detaches the template for future entries. Type is immutable. For a habit three times per week set target=3 and goal_period=weekly; schedule lists allowed weekdays (Sunday=0). Goal/schedule changes recalculate historical progress but preserve logs. archived_at accepts an ISO timestamp to archive, or null to restore.",
+      inputSchema: z
+        .object(trackerPatchSchema.shape)
+        .extend({ tracker_id: z.uuid() })
         .strict(),
       annotations: {
         readOnlyHint: false,
@@ -228,20 +379,33 @@ export function createMcpServer(context: TrackerContext, canWrite: boolean) {
         openWorldHint: false,
       },
     },
-    async (input) => {
+    async ({ tracker_id, ...patch }) => {
       if (!canWrite)
         return result({ error: "This connection has read-only access." }, true);
-      const profile = await client
-        .from("profiles")
-        .select("timezone")
-        .eq("id", user.id)
-        .single();
-      if (profile.error)
-        return result({ error: "Could not load timezone." }, true);
-      const saved = await recordLogWithContext(context, {
-        ...input,
-        date: input.date ?? dateInTimezone(new Date(), profile.data.timezone),
-      });
+      const saved = await updateTrackerWithContext(context, tracker_id, patch);
+      return result(saved, !saved.success);
+    },
+  );
+  server.registerTool(
+    "update_checkin",
+    {
+      description:
+        "Correct an existing check-in obtained from get_history. Send only changed date, value or detail keys. Details merge with saved content; remove_detail_keys explicitly clears selected keys. Validation uses the entry's original immutable template version, even after the tracker/template changes. Never changes tracker or recorded schema. Archived tracker entries cannot be edited. Habit values are always 1; durations are seconds.",
+      inputSchema: z
+        .object(checkinPatchSchema.shape)
+        .extend({ checkin_id: z.uuid() })
+        .strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ checkin_id, ...patch }) => {
+      if (!canWrite)
+        return result({ error: "This connection has read-only access." }, true);
+      const saved = await updateCheckinWithContext(context, checkin_id, patch);
       return result(saved, !saved.success);
     },
   );

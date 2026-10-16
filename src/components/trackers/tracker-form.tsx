@@ -130,10 +130,16 @@ export function TrackerForm({
                 }
                 options={[
                   { value: "", label: "No template" },
-                  ...templates.map((template) => ({
-                    value: template.id,
-                    label: template.name,
-                  })),
+                  ...templates
+                    .filter(
+                      (template) =>
+                        !template.archived_at ||
+                        template.id === tracker?.activity_template_id,
+                    )
+                    .map((template) => ({
+                      value: template.id,
+                      label: template.name,
+                    })),
                 ]}
               />
               <p className="muted text-xs">

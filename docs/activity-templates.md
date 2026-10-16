@@ -12,7 +12,7 @@ Trackers keep their existing progress configuration. An activity template adds o
 
 A progress-only check-in always works with `{}` details. If you submit any details, fields marked `required` must be present. Empty optional controls are omitted. To remove all content, use **Clear details** in history and save.
 
-The visual builder is the normal authoring experience. Add text, numbers, dates, single/multiple choices, or lists. Label each field, mark it required when adding details if needed, and use the up/down buttons to change order. Field identifiers are automatic and remain stable when labels change.
+The visual builder is the normal authoring experience. Add text, long text, bounded ratings, numbers, dates, single/multiple choices, or lists. Label each field, mark it required when adding details if needed, and use the up/down buttons to change order. Field identifiers are automatic and remain stable when labels change.
 
 The desktop builder shows a live check-in preview beside the editor. Mobile provides **Build form** and **Preview form** views. Preview values are local and never saved as check-ins. Saving is explicit; closing the builder discards unsaved edits.
 
@@ -45,7 +45,7 @@ Templates support 1–30 fields. Text values allow up to 5,000 characters, numbe
 
 Publishing an existing template creates an immutable version. New check-ins use the current version. Historical entries retain their recorded version and remain editable with that version's field labels, types, and options.
 
-Changing or removing a tracker's template affects future entries only. Legacy entries remain template-free when edited. Archiving retains all history and continues to prevent new/edited entries. Phase 1 has no template deletion UI.
+Changing or removing a tracker's template affects future entries only. Legacy entries remain template-free when edited. Archiving retains all history and continues to prevent new/edited entries. The MCP `delete_template` tool archives a template; versions and historical entries remain available. New associations and schema edits are blocked while archived, and existing trackers can continue recording. The library hides archived choices.
 
 Submitting a details form whose version changed before saving produces an error asking you to review the current fields. Progress-only saves resolve the current template inside the database transaction. Repeated check-in requests return the existing entry without overwriting content; edits are explicit.
 
@@ -66,3 +66,8 @@ Apply migrations with `npx supabase migration up --local`; do not reset a databa
 ## Follow-up
 
 Phase 2: reusable subjects, optional subject selection/creation, metadata, and subject-based history grouping. Phase 3: repeatable object fields, content insights, and advanced features only when requested.
+
+
+## Agent management and additional fields
+
+The MCP endpoint supports template creation, retrieval, partial updates, and safe archival. See [MCP tools and DDIA workflow](mcp.md#tools). Field updates merge by key and use an expected version to prevent stale overwrites. `textarea` has the same content bounds as text. `rating` accepts integers within its required `config: {"min": 1, "max": 5}` bounds; min/max must be distinct, ordered integers within the standard number limits. The visual builder and check-in renderer support both types.

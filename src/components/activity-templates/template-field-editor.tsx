@@ -107,6 +107,45 @@ export function TemplateFieldEditor({
           />
         </Field>
       </div>
+      {field.type === "rating" && (
+        <div className="template-field-basics">
+          {(["min", "max"] as const).map((bound) => (
+            <Field key={bound}>
+              <FieldLabel htmlFor={`${field.key}-${bound}`}>
+                {bound === "min" ? "Minimum rating" : "Maximum rating"}
+              </FieldLabel>
+              <Input
+                id={`${field.key}-${bound}`}
+                type="number"
+                step={1}
+                value={
+                  Number.isFinite(field.config?.[bound])
+                    ? field.config![bound]
+                    : ""
+                }
+                onChange={(e) =>
+                  onChange({
+                    ...field,
+                    config: {
+                      min: field.config?.min ?? 1,
+                      max: field.config?.max ?? 5,
+                      [bound]:
+                        e.target.value === "" ? NaN : Number(e.target.value),
+                    },
+                  })
+                }
+              />
+            </Field>
+          ))}
+          <FieldError>
+            {
+              Object.entries(errors).find(([path]) =>
+                path.startsWith(`${base}.config`),
+              )?.[1]
+            }
+          </FieldError>
+        </div>
+      )}
       {selection && (
         <div className="template-options">
           <p className="template-options-label">Choices</p>

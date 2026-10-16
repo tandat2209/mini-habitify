@@ -341,3 +341,93 @@ describe("template persistence and compatibility", () => {
     ).not.toBeNull();
   });
 });
+
+it("validates ratings and preserves owned history when templates are archived", async () => {
+  const definition = [
+    { key: "chapter", label: "Chapter", type: "textarea" },
+    {
+      key: "understanding",
+      label: "Understanding",
+      type: "rating",
+      config: { min: 1, max: 5 },
+    },
+  ];
+  const created = await a.rpc("publish_activity_template", {
+    p_name: "DDIA",
+    p_fields: definition,
+  });
+  expect(created.error).toBeNull();
+  const id = created.data;
+  const template = await a
+    .from("activity_templates")
+    .select()
+    .eq("id", id)
+    .single();
+  const version = template.data.current_version_id;
+  const trackerId = await tracker(id);
+  const saved = await record(
+    trackerId,
+    { chapter: "7", understanding: 4 },
+    version,
+  );
+  expect(saved.error).toBeNull();
+  for (const rating of [0, 6, 3.5, "4"])
+    expect(
+      (await record(trackerId, { understanding: rating }, version)).error,
+    ).not.toBeNull();
+  expect(
+    (
+      await b.rpc("update_activity_template", {
+        p_template: id,
+        p_expected_version: version,
+        p_name: "Stolen",
+      })
+    ).error,
+  ).not.toBeNull();
+  expect(
+    (
+      await b
+        .from("activity_templates")
+        .update({ archived_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+    ).data,
+  ).toEqual([]);
+  expect(
+    (
+      await a
+        .from("activity_templates")
+        .update({ archived_at: new Date().toISOString() })
+        .eq("id", id)
+    ).error,
+  ).toBeNull();
+  expect(
+    (await a.from("tracker_logs").select().eq("id", saved.data)).data?.[0]
+      .details,
+  ).toEqual({ chapter: "7", understanding: 4 });
+  // Current associations remain useful after archival, but new ones are denied.
+  expect(
+    (await record(trackerId, { chapter: "8", understanding: 5 }, version))
+      .error,
+  ).toBeNull();
+  expect(
+    (
+      await a.from("trackers").insert({
+        user_id: aid,
+        name: "New association",
+        type: "habit",
+        target: 1,
+        activity_template_id: id,
+      })
+    ).error,
+  ).not.toBeNull();
+  expect(
+    (
+      await a.rpc("publish_activity_template", {
+        p_template: id,
+        p_name: "Archived edit",
+        p_fields: definition,
+      })
+    ).error,
+  ).not.toBeNull();
+});

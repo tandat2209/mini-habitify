@@ -206,3 +206,61 @@ test("builds reusable templates visually and preserves historical field versions
       .evaluate((element) => element.scrollWidth <= element.clientWidth),
   ).toBe(true);
 });
+
+test("mobile template builder supports long text and bounded ratings with keyboard", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/signup");
+  await page
+    .getByLabel("Email address")
+    .fill(`rating-${crypto.randomUUID()}@example.com`);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("playwright-test-password");
+  await page
+    .getByRole("button", { name: "Create account", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Templates", exact: true }).click();
+  await page.getByLabel("Template name", { exact: true }).fill("Book Reading");
+  await addField(page, "What I learned", "textarea");
+  const rating = await addField(page, "Understanding", "rating");
+  await expect(rating.getByLabel("Minimum rating")).toHaveValue("1");
+  await expect(rating.getByLabel("Maximum rating")).toHaveValue("5");
+  await rating.getByLabel("Minimum rating").focus();
+  await page.keyboard.press("Tab");
+  await expect(rating.getByLabel("Maximum rating")).toBeFocused();
+  await page.getByRole("button", { name: "Preview form", exact: true }).click();
+  const preview = page.getByRole("region", { name: "Check-in preview" });
+  await preview
+    .getByLabel("What I learned", { exact: true })
+    .fill("Transaction isolation\nQuestions for later");
+  await expect(
+    preview.getByLabel("Understanding", { exact: true }),
+  ).toHaveAttribute("min", "1");
+  await expect(
+    preview.getByLabel("Understanding", { exact: true }),
+  ).toHaveAttribute("max", "5");
+  await preview.getByLabel("Understanding", { exact: true }).fill("4");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "/tmp/mini-habitify-rating-mobile.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Create template", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Templates", exact: true }).click();
+  await selectOption(page.getByLabel("Template to edit", { exact: true }), {
+    label: "Book Reading",
+  });
+  await page.getByRole("button", { name: "Preview form", exact: true }).click();
+  await expect(
+    preview.getByLabel("Understanding", { exact: true }),
+  ).toHaveAttribute("max", "5");
+});

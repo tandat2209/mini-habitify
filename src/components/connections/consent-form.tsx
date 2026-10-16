@@ -75,10 +75,13 @@ export function ConsentForm({
           <input type="checkbox" name="can_write" form="oauth-consent" />
           <PencilLine size={20} aria-hidden />
           <span>
-            <strong>Allow creating and managing trackers and check-ins</strong>
+            <strong>
+              Allow creating and managing trackers, templates, and check-ins
+            </strong>
             <span className="muted block">
-              Optional. This permits tracking changes through the assistant and
-              API. It does not permit account, appearance, or template changes.
+              Optional. This permits tracker, template, and check-in changes
+              through the assistant and API. Account and appearance settings
+              remain private.
             </span>
           </span>
         </label>

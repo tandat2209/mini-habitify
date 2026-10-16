@@ -10,7 +10,16 @@ export const fieldSchema = z
         "Choose another field key.",
       ),
     label: z.string().trim().min(1, "Give this field a label.").max(80),
-    type: z.enum(["text", "number", "date", "select", "multi_select", "list"]),
+    type: z.enum([
+      "text",
+      "textarea",
+      "rating",
+      "number",
+      "date",
+      "select",
+      "multi_select",
+      "list",
+    ]),
     required: z.boolean().default(false),
     options: z
       .array(
@@ -28,9 +37,25 @@ export const fieldSchema = z
         "Give each option a different value.",
       )
       .optional(),
+    config: z
+      .strictObject({
+        min: z.number().int().min(-1e12).max(1e12),
+        max: z.number().int().min(-1e12).max(1e12),
+      })
+      .refine(
+        (range) => range.min < range.max,
+        "Rating minimum must be below maximum.",
+      )
+      .optional(),
     semanticType: z.string().trim().min(1).max(80).optional(),
   })
   .superRefine((field, ctx) => {
+    if ((field.type === "rating") !== (field.config !== undefined))
+      ctx.addIssue({
+        code: "custom",
+        path: ["config"],
+        message: "Only rating fields require min/max config.",
+      });
     const selection = field.type === "select" || field.type === "multi_select";
     if (selection !== (field.options !== undefined))
       ctx.addIssue({
@@ -63,10 +88,14 @@ export function validateDetails(fields: TemplateField[], details: unknown) {
     let schema: z.ZodType;
     switch (field.type) {
       case "text":
+      case "textarea":
         schema = z
           .string()
           .max(5000)
           .refine((v) => v.trim().length > 0, "Enter some text.");
+        break;
+      case "rating":
+        schema = z.number().int().min(field.config!.min).max(field.config!.max);
         break;
       case "number":
         schema = z.number().finite().min(-1e12).max(1e12);
@@ -130,3 +159,45 @@ export function detailsForDisplay(fields: TemplateField[], details: Details) {
         ];
   });
 }
+
+export function mergeTemplateFields(
+  current: TemplateField[],
+  upserts: TemplateField[],
+  removeKeys: string[],
+) {
+  const updates = new Map(upserts.map((field) => [field.key, field]));
+  return fieldsSchema.parse([
+    ...current
+      .filter((field) => !removeKeys.includes(field.key))
+      .map((field) => updates.get(field.key) ?? field),
+    ...upserts.filter(
+      (field) => !current.some((existing) => existing.key === field.key),
+    ),
+  ]);
+}
+export const templatePatchSchema = z
+  .strictObject({
+    name: templateSchema.shape.name.optional(),
+    description: z.string().trim().max(500).optional(),
+    upsert_fields: z
+      .array(fieldSchema)
+      .min(1)
+      .max(30)
+      .refine(
+        (fields) => new Set(fields.map((f) => f.key)).size === fields.length,
+        "Field keys must be unique.",
+      )
+      .optional(),
+    remove_field_keys: z.array(fieldSchema.shape.key).min(1).max(30).optional(),
+  })
+  .refine(
+    (patch) => Object.keys(patch).length > 0,
+    "Provide at least one change.",
+  )
+  .refine(
+    (patch) =>
+      !(patch.upsert_fields ?? []).some((f) =>
+        patch.remove_field_keys?.includes(f.key),
+      ),
+    "Cannot update and remove the same field.",
+  );

@@ -1,6 +1,8 @@
 import type { TemplateField } from "./validation";
 export const fieldTypeLabels: Record<TemplateField["type"], string> = {
   text: "Text",
+  textarea: "Long text",
+  rating: "Rating",
   number: "Number",
   date: "Date",
   select: "Single choice",
@@ -19,10 +21,11 @@ export function changeFieldType(
   field: TemplateField,
   type: TemplateField["type"],
 ): TemplateField {
-  const { options, ...rest } = field;
+  const { options, config, ...rest } = field;
   return {
     ...rest,
     type,
+    ...(type === "rating" ? { config: config ?? { min: 1, max: 5 } } : {}),
     ...(type === "select" || type === "multi_select"
       ? { options: options ? [...options] : ["", ""] }
       : {}),

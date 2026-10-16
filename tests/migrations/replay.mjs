@@ -79,6 +79,7 @@ try {
     end $$;
     ${readFileSync("tests/migrations/mcp-authorization.sql", "utf8")}
     ${readFileSync("tests/migrations/mcp-gateway.sql", "utf8")}
+    ${readFileSync("tests/migrations/agent-management.sql", "utf8")}
   `,
   );
   console.log(

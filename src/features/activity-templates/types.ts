@@ -5,6 +5,7 @@ export interface ActivityTemplate {
   name: string;
   description: string;
   current_version_id: string | null;
+  archived_at?: string | null;
 }
 export interface TemplateVersion {
   id: string;

@@ -57,7 +57,9 @@ async function connect(
   ).toBeVisible();
   if (write)
     await page
-      .getByLabel("Allow creating and managing trackers and check-ins")
+      .getByLabel(
+        "Allow creating and managing trackers, templates, and check-ins",
+      )
       .check();
   await page.getByRole("button", { name: "Allow access", exact: true }).click();
   await expect(page).toHaveURL(/127\.0\.0\.1:45678\/callback\?code=/);
@@ -553,10 +555,12 @@ test("mobile consent preserves login and can decline without granting access", a
     ),
   ).toBe(true);
   await expect(
-    page.getByLabel("Allow creating and managing trackers and check-ins"),
+    page.getByLabel(
+      "Allow creating and managing trackers, templates, and check-ins",
+    ),
   ).not.toBeChecked();
   const writeCheckbox = page.getByLabel(
-    "Allow creating and managing trackers and check-ins",
+    "Allow creating and managing trackers, templates, and check-ins",
   );
   await writeCheckbox.focus();
   await page.keyboard.press("Space");

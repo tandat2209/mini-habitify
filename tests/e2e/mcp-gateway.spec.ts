@@ -83,7 +83,9 @@ async function connect(page: Page, write = true, wrongVerifier = false) {
   }
   if (write)
     await page
-      .getByLabel("Allow creating and managing trackers and check-ins")
+      .getByLabel(
+        "Allow creating and managing trackers, templates, and check-ins",
+      )
       .check();
   await page.getByRole("button", { name: "Allow access", exact: true }).click();
   await expect(page).toHaveURL(/45679\/callback\?code=/);
@@ -141,8 +143,15 @@ async function signup(page: Page) {
     .click();
   await expect(page).toHaveURL(/\/today/);
 }
-async function rpc(page: Page, token: string, name: string, args: object = {}) {
+async function rpc(
+  page: Page,
+  token: string,
+  name: string,
+  args: object = {},
+  timeout = 30000,
+) {
   return page.request.post("/mcp", {
+    timeout,
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/json, text/event-stream",
@@ -289,6 +298,29 @@ test("gateway read-only consent and PKCE rejection", async ({ page }) => {
     type: "habit",
   });
   expect((await denied.json()).result.isError).toBe(true);
+  const placeholder = crypto.randomUUID();
+  for (const [name, args] of [
+    [
+      "create_template",
+      { name: "Forbidden", fields: [{ key: "n", label: "N", type: "text" }] },
+    ],
+    [
+      "update_template",
+      {
+        template_id: placeholder,
+        expected_version_id: placeholder,
+        name: "Forbidden",
+      },
+    ],
+    ["delete_template", { template_id: placeholder }],
+    ["update_tracker", { tracker_id: placeholder, name: "Forbidden" }],
+    ["update_checkin", { checkin_id: placeholder, value: 2 }],
+  ] as const) {
+    expect(
+      (await (await rpc(page, token.access_token, name, args)).json()).result
+        .isError,
+    ).toBe(true);
+  }
   await page.goto("/today");
   await connect(page, false, true);
 });
@@ -382,4 +414,169 @@ test("gateway rejects forged requests, unsafe redirects and cross-origin consent
       })
     ).status(),
   ).toBe(400);
+});
+
+test("agent manages DDIA template, tracker and historical check-ins through MCP", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await signup(page);
+  const token = (await connect(page))!;
+  async function call(name: string, args: object = {}, error = false) {
+    // A stale-version conflict must return promptly instead of retriggering transaction retries.
+    const response = await rpc(
+      page,
+      token.access_token,
+      name,
+      args,
+      name === "update_template" && error ? 5000 : 30000,
+    ).catch(() => {
+      throw new Error(`MCP tool ${name} did not respond promptly.`);
+    });
+    const body = await response.json();
+    expect(body.error, JSON.stringify(body)).toBeUndefined();
+    expect(body.result.isError === true, JSON.stringify(body)).toBe(error);
+    return JSON.parse(body.result.content[0].text);
+  }
+  const created = await call("create_template", {
+    name: "Book Reading",
+    fields: [
+      { key: "chapters", label: "Chapters read", type: "text", required: true },
+      { key: "takeaway", label: "What I learned", type: "textarea" },
+      {
+        key: "understanding",
+        label: "Understanding",
+        type: "rating",
+        config: { min: 1, max: 5 },
+      },
+    ],
+  });
+  const templateId = created.templateId;
+  const original = await call("get_template", { template_id: templateId });
+  const versionId = original.version.id;
+  expect(original.version.fields).toHaveLength(3);
+  const tracker = await call("create_tracker", {
+    name: "Read DDIA",
+    type: "habit",
+    target: 3,
+    goal_period: "weekly",
+    activity_template_id: templateId,
+  });
+  const trackerId = tracker.trackerId;
+  const recorded = await call("record_checkin", {
+    tracker_id: trackerId,
+    value: 1,
+    request_id: crypto.randomUUID(),
+    template_version_id: versionId,
+    details: {
+      chapters: "Chapter 7",
+      takeaway: "Transaction isolation",
+      understanding: 4,
+    },
+  });
+  await call(
+    "record_checkin",
+    {
+      tracker_id: trackerId,
+      value: 1,
+      request_id: crypto.randomUUID(),
+      template_version_id: versionId,
+      details: { chapters: "Chapter 7", understanding: 6 },
+    },
+    true,
+  );
+  await call("update_template", {
+    template_id: templateId,
+    expected_version_id: versionId,
+    upsert_fields: [
+      {
+        key: "questions",
+        label: "Questions I still have",
+        type: "textarea",
+        required: true,
+      },
+    ],
+  });
+  const updated = await call("get_template", { template_id: templateId });
+  expect(updated.version.fields).toHaveLength(4);
+  expect(updated.version.id).not.toBe(versionId);
+  await call(
+    "update_template",
+    {
+      template_id: templateId,
+      expected_version_id: versionId,
+      name: "Stale write",
+    },
+    true,
+  );
+  await call("update_checkin", {
+    checkin_id: recorded.logId,
+    details: { understanding: 5 },
+  });
+  await call(
+    "update_checkin",
+    {
+      checkin_id: recorded.logId,
+      details: { questions: "Uses the new schema" },
+    },
+    true,
+  );
+  const history = await call("get_history", { tracker_id: trackerId });
+  expect(history.logs[0].details).toEqual({
+    chapters: "Chapter 7",
+    takeaway: "Transaction isolation",
+    understanding: 5,
+  });
+  expect(history.logs[0].template_version_id).toBe(versionId);
+  await call("update_tracker", {
+    tracker_id: trackerId,
+    name: "DDIA study",
+    target: 4,
+  });
+  const config = await call("get_tracker", { tracker_id: trackerId });
+  expect(config.tracker).toMatchObject({
+    name: "DDIA study",
+    target: 4,
+    goal_period: "weekly",
+    activity_template_id: templateId,
+    schedule: [0, 1, 2, 3, 4, 5, 6],
+  });
+  expect((await call("list_trackers")).trackers).toHaveLength(1);
+  await call("delete_template", { template_id: templateId });
+  expect((await call("list_templates")).templates).toHaveLength(0);
+  expect(
+    (await call("list_templates", { include_archived: true })).templates,
+  ).toHaveLength(1);
+  expect(
+    (await call("get_template", { template_id: templateId })).template
+      .archived_at,
+  ).toBeTruthy();
+  expect(
+    (await call("get_history", { tracker_id: trackerId })).logs[0].details
+      .understanding,
+  ).toBe(5);
+  await call(
+    "create_tracker",
+    {
+      name: "Archived template",
+      type: "habit",
+      activity_template_id: templateId,
+    },
+    true,
+  );
+  await call("update_tracker", {
+    tracker_id: trackerId,
+    activity_template_id: null,
+  });
+  expect(
+    (await call("get_tracker", { tracker_id: trackerId })).template,
+  ).toBeNull();
+  await page.goto("/today");
+  await expect(
+    page.getByRole("heading", { name: "DDIA study", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "DDIA study", exact: true }),
+  ).toBeVisible();
 });

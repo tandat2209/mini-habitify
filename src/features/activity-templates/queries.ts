@@ -12,7 +12,7 @@ export async function loadTemplateData(
   for (let from = 0; ; from += 1000) {
     const result = await client
       .from("activity_templates")
-      .select("id,name,description,current_version_id")
+      .select("id,name,description,current_version_id,archived_at")
       .eq("user_id", userId)
       .order("id")
       .range(from, from + 999);

@@ -74,3 +74,20 @@ it("rejects mismatched recovery passwords", () => {
     }).success,
   ).toBe(false);
 });
+
+it("accepts sparse tracker patches without defaults and rejects type/ownership changes", async () => {
+  const { trackerPatchSchema } = await import("./validation");
+  expect(trackerPatchSchema.parse({ name: "New name" })).toEqual({
+    name: "New name",
+  });
+  expect(trackerPatchSchema.parse({ activity_template_id: null })).toEqual({
+    activity_template_id: null,
+  });
+  for (const patch of [
+    {},
+    { type: "numeric" },
+    { user_id: "someone" },
+    { schedule: [] },
+  ])
+    expect(trackerPatchSchema.safeParse(patch).success).toBe(false);
+});

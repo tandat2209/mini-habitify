@@ -6,7 +6,12 @@ import {
   validateDetails,
   fieldsSchema,
 } from "@/features/activity-templates/validation";
-import { trackerSchema, logSchema } from "./validation";
+import {
+  trackerSchema,
+  trackerPatchSchema,
+  checkinPatchSchema,
+  logSchema,
+} from "./validation";
 import {
   dateInTimezone,
   isScheduled,
@@ -21,6 +26,7 @@ export interface MutationResult {
   success?: boolean;
   logId?: string;
   trackerId?: string;
+  templateId?: string;
   fieldErrors?: Record<string, string>;
 }
 export async function saveTrackerWithContext(
@@ -139,4 +145,105 @@ function detailsError(error: z.ZodError): MutationResult {
       ]),
     ),
   };
+}
+
+export async function updateTrackerWithContext(
+  context: TrackerContext,
+  id: string,
+  input: unknown,
+): Promise<MutationResult> {
+  const patch = trackerPatchSchema.safeParse(input);
+  if (!z.uuid().safeParse(id).success) return { error: "Invalid tracker." };
+  if (!patch.success) return { error: patch.error.issues[0].message };
+  const current = await context.client
+    .from("trackers")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", context.user.id)
+    .single();
+  if (current.error) return { error: "Tracker unavailable." };
+  const complete = trackerSchema.safeParse({ ...current.data, ...patch.data });
+  if (!complete.success) return { error: complete.error.issues[0].message };
+  const { error } = await context.client
+    .from("trackers")
+    .update(patch.data)
+    .eq("id", id)
+    .eq("user_id", context.user.id)
+    .select("id")
+    .single();
+  return error
+    ? {
+        error:
+          "Could not update tracker. Check the goal, schedule and active template.",
+      }
+    : { success: true, trackerId: id };
+}
+
+export async function updateCheckinWithContext(
+  context: TrackerContext,
+  id: string,
+  input: unknown,
+): Promise<MutationResult> {
+  const parsed = checkinPatchSchema.safeParse(input);
+  if (!z.uuid().safeParse(id).success) return { error: "Invalid entry." };
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { client, user } = context;
+  const log = await client
+    .from("tracker_logs")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+  if (log.error) return { error: "Entry unavailable." };
+  const tracker = await client
+    .from("trackers")
+    .select("type")
+    .eq("id", log.data.tracker_id)
+    .eq("user_id", user.id)
+    .is("archived_at", null)
+    .single();
+  if (tracker.error) return { error: "Tracker unavailable." };
+  let fields: ReturnType<typeof fieldsSchema.parse> = [];
+  if (log.data.template_version_id) {
+    const version = await client
+      .from("activity_template_versions")
+      .select("fields")
+      .eq("id", log.data.template_version_id)
+      .eq("user_id", user.id)
+      .single();
+    if (version.error) return { error: "Recorded template unavailable." };
+    fields = fieldsSchema.parse(version.data.fields);
+  }
+  const { details, remove_detail_keys, ...patch } = parsed.data;
+  let content;
+  if (details !== undefined || remove_detail_keys !== undefined) {
+    const saved = z
+      .record(
+        z.string(),
+        z.union([z.string(), z.number(), z.array(z.string())]),
+      )
+      .parse(log.data.details);
+    const merged = { ...saved, ...details };
+    for (const key of remove_detail_keys ?? []) delete merged[key];
+    const validated = validateDetails(fields, merged);
+    if (!validated.success) return detailsError(validated.error);
+    content = validated.data;
+  }
+  const { error } = await client
+    .from("tracker_logs")
+    .update({
+      ...(patch.date !== undefined ? { tracking_date: patch.date } : {}),
+      ...(patch.value !== undefined
+        ? { value: tracker.data.type === "habit" ? 1 : patch.value }
+        : {}),
+      ...(content !== undefined ? { details: content } : {}),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .eq("tracker_id", log.data.tracker_id)
+    .select("id")
+    .single();
+  return error
+    ? { error: "Could not edit entry. Check the date and tracker schedule." }
+    : { success: true, logId: id };
 }

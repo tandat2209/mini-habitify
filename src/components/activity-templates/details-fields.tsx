@@ -91,10 +91,12 @@ export function DetailsFields({
                   })),
                 ]}
               />
-            ) : field.type === "text" || field.type === "list" ? (
+            ) : field.type === "text" ||
+              field.type === "textarea" ||
+              field.type === "list" ? (
               <Textarea
                 {...common}
-                maxLength={field.type === "text" ? 5000 : undefined}
+                maxLength={field.type !== "list" ? 5000 : undefined}
                 value={
                   Array.isArray(current)
                     ? current.join("\n")
@@ -116,8 +118,20 @@ export function DetailsFields({
             ) : (
               <Input
                 {...common}
-                type={field.type === "number" ? "number" : "date"}
-                step={field.type === "number" ? "any" : undefined}
+                type={
+                  field.type === "number" || field.type === "rating"
+                    ? "number"
+                    : "date"
+                }
+                min={field.type === "rating" ? field.config!.min : undefined}
+                max={field.type === "rating" ? field.config!.max : undefined}
+                step={
+                  field.type === "rating"
+                    ? 1
+                    : field.type === "number"
+                      ? "any"
+                      : undefined
+                }
                 value={
                   typeof current === "number" || typeof current === "string"
                     ? current
@@ -128,7 +142,7 @@ export function DetailsFields({
                     field.key,
                     e.target.value === ""
                       ? undefined
-                      : field.type === "number"
+                      : field.type === "number" || field.type === "rating"
                         ? Number(e.target.value)
                         : e.target.value,
                   )

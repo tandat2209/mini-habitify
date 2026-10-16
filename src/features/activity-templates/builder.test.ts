@@ -49,3 +49,14 @@ describe("visual template drafts", () => {
     ).toBe(true);
   });
 });
+
+it("keeps rating bounds only while editing a rating field", () => {
+  const text = { ...createDraftField("rating"), label: "Understanding" };
+  const rating = changeFieldType(text, "rating");
+  expect(rating.config).toEqual({ min: 1, max: 5 });
+  expect(
+    changeFieldType({ ...rating, config: { min: 0, max: 10 } }, "rating")
+      .config,
+  ).toEqual({ min: 0, max: 10 });
+  expect(changeFieldType(rating, "textarea")).not.toHaveProperty("config");
+});

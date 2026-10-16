@@ -111,3 +111,25 @@ export const passwordResetSchema = z
     path: ["confirm_password"],
   });
 export const recoveryEmailSchema = z.object({ email: z.email().max(254) });
+
+export const trackerPatchSchema = z
+  .object(trackerSchema.shape)
+  .omit({ type: true })
+  .partial()
+  .strict()
+  .extend({ archived_at: z.iso.datetime().nullable().optional() })
+  .refine(
+    (patch) => Object.keys(patch).length > 0,
+    "Provide at least one change.",
+  );
+export const checkinPatchSchema = z
+  .strictObject({
+    date: trackingDateSchema.optional(),
+    value: logSchema.shape.value.optional(),
+    details: logSchema.shape.details,
+    remove_detail_keys: z.array(z.string().min(1).max(64)).max(30).optional(),
+  })
+  .refine(
+    (patch) => Object.keys(patch).length > 0,
+    "Provide at least one change.",
+  );

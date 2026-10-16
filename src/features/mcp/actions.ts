@@ -55,6 +55,8 @@ export async function decideConnection(
     client_name: details.data.client.name.slice(0, 200) || "Unnamed app",
     resource: mcpConfig().resource,
     grant_id: grantId,
+    can_manage_templates:
+      form.get("can_write") === "on" && (gateway?.canWrite ?? true),
     can_write: form.get("can_write") === "on" && (gateway?.canWrite ?? true),
     revoked_at: null,
     created_at: new Date().toISOString(),

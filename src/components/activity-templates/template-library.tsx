@@ -202,10 +202,12 @@ export function TemplateLibrary({
               onValueChange={selectTemplate}
               options={[
                 { value: "", label: "Create a new template" },
-                ...data.templates.map((template) => ({
-                  value: template.id,
-                  label: template.name,
-                })),
+                ...data.templates
+                  .filter((template) => !template.archived_at)
+                  .map((template) => ({
+                    value: template.id,
+                    label: template.name,
+                  })),
               ]}
             />
           </Field>

@@ -120,3 +120,58 @@ it("preserves selection option values exactly across schema reads", () => {
     true,
   );
 });
+
+it("supports long text and bounded integer ratings", () => {
+  const template = templateSchema.safeParse({
+    name: "Book Reading",
+    fields: [
+      { key: "takeaway", label: "What did you learn?", type: "textarea" },
+      {
+        key: "understanding",
+        label: "Understanding",
+        type: "rating",
+        config: { min: 1, max: 5 },
+      },
+    ],
+  });
+  expect(template.success).toBe(true);
+  if (!template.success) return;
+  expect(
+    validateDetails(template.data.fields, {
+      takeaway: "Isolation",
+      understanding: 4,
+    }).success,
+  ).toBe(true);
+  for (const understanding of [0, 6, 3.5, "4"])
+    expect(
+      validateDetails(template.data.fields, { understanding }).success,
+    ).toBe(false);
+  for (const field of [
+    { key: "r", label: "R", type: "rating" },
+    { key: "r", label: "R", type: "rating", config: { min: 5, max: 1 } },
+    { key: "r", label: "R", type: "text", config: { min: 1, max: 5 } },
+  ])
+    expect(
+      templateSchema.safeParse({ name: "Invalid", fields: [field] }).success,
+    ).toBe(false);
+});
+
+it("adds a field without removing existing fields and requires explicit removal", async () => {
+  const { mergeTemplateFields } = await import("./validation");
+  const before = templateSchema.parse(definition).fields;
+  const after = mergeTemplateFields(
+    before,
+    [{ key: "questions", label: "Questions", type: "text", required: false }],
+    [],
+  );
+  expect(after.slice(0, before.length)).toEqual(before);
+  expect(after.at(-1)?.key).toBe("questions");
+  const renamed = mergeTemplateFields(
+    after,
+    [{ ...after[0], label: "Renamed" }],
+    ["rating"],
+  );
+  expect(renamed[0].label).toBe("Renamed");
+  expect(renamed.some((f) => f.key === "rating")).toBe(false);
+  expect(before[0].label).toBe("Summary");
+});
