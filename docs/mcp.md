@@ -19,6 +19,8 @@ The remote MCP endpoint is `/mcp`. Connected apps live at `/settings/connections
 
 Creation is not idempotent. Check-in callers must generate one request UUID for each intended entry and reuse it for retries. Habit uniqueness remains enforced by the existing engine/database contracts. New write consent includes template management. Existing grants retain their tracker/check-in permissions but cannot write templates until the user reconnects and approves the expanded consent. The database checks `can_manage_templates` in addition to write access. Account, appearance, and widget settings remain outside these tracking tools.
 
+The initial unauthenticated MCP challenge requests `tracking:read tracking:write`, matching gateway discovery, so clients can offer optional write consent. Explicit read-only authorization requests remain read-only. If the consent page shows only `tracking:read` and no management checkbox, the client has started a read-only request; after updating discovery/challenge configuration, recreate the client connection to discard the old request.
+
 ### Example: DDIA without app configuration
 
 1. `create_template` with a name such as Book Reading and stable keys `chapters` (`text`), `takeaway` (`textarea`), and `understanding` (`rating`, `config: {"min":1,"max":5}`). Mark fields required only when requested. All generic field types remain available; there are no reading-specific models.

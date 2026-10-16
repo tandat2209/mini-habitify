@@ -580,3 +580,13 @@ test("agent manages DDIA template, tracker and historical check-ins through MCP"
     page.getByRole("heading", { name: "DDIA study", exact: true }),
   ).toBeVisible();
 });
+
+test("initial MCP challenge offers read and write scopes for explicit consent", async ({
+  request,
+}) => {
+  const response = await request.post("/mcp", { data: {} });
+  expect(response.status()).toBe(401);
+  expect(response.headers()["www-authenticate"]).toContain(
+    'scope="tracking:read tracking:write"',
+  );
+});

@@ -7,6 +7,7 @@ import { validMcpClaims } from "@/features/mcp/security";
 import { createMcpServer } from "@/features/mcp/server";
 import { gatewayEnabled } from "@/features/mcp/gateway/store";
 import { resolveGatewayToken } from "@/features/mcp/gateway/model";
+import { gatewayScopes } from "@/features/mcp/gateway/security";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 function headers(request: Request) {
@@ -34,7 +35,7 @@ async function handle(request: Request) {
   const unauthorized = () => {
     h.set(
       "WWW-Authenticate",
-      `Bearer resource_metadata="${config.metadata}", scope="${gatewayEnabled() ? "tracking:read" : "email"}"`,
+      `Bearer resource_metadata="${config.metadata}", scope="${gatewayEnabled() ? gatewayScopes.join(" ") : "email"}"`,
     );
     return Response.json(
       { error: "Connect using OAuth to access mini-habitify." },
