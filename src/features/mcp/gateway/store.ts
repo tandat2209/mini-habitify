@@ -1,5 +1,6 @@
 import "server-only";
 import pg, { type PoolClient } from "pg";
+import { gatewayDatabaseConfig } from "./database";
 import { digest } from "./security";
 let pool: pg.Pool | undefined;
 export function gatewayEnabled() {
@@ -18,7 +19,7 @@ export async function transaction<T>(
 ): Promise<T> {
   if (!gatewayEnabled()) throw new Error("MCP gateway is not configured.");
   pool ??= new pg.Pool({
-    connectionString: process.env.MCP_GATEWAY_DATABASE_URL,
+    ...gatewayDatabaseConfig(process.env.MCP_GATEWAY_DATABASE_URL!),
     max: 3,
     idleTimeoutMillis: 20000,
     connectionTimeoutMillis: 5000,
