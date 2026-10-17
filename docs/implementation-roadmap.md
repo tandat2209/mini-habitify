@@ -141,3 +141,13 @@ The initial app is committed locally as `be38ba2`; subsequent feature work is no
 - A real ChatGPT connection requested only `tracking:read`, hiding the optional write checkbox. Reproduced the root cause with an unauthenticated MCP request: the `WWW-Authenticate` challenge requested only read despite discovery advertising both tracking scopes.
 - Align the gateway challenge with the existing supported scope list. Request both read/write capabilities initially; the management checkbox remains explicit opt-in, and explicit read-only requests/grants are not upgraded.
 - Verification: the new challenge regression failed before the fix, then passed; the real OAuth read-only/PKCE flow also passed. Type checking and lint passed. Existing in-flight/cached read-only client requests need a fresh connection after rollout.
+
+## 2026-10-17 — Consolidated settings navigation
+
+- One Settings button in the dashboard header groups Templates, Appearance, and Agent connections. Removed the repeated appearance controls and the separate connections sidebar entry; existing editors, preference persistence, and connection management remain in use.
+- Verification: 69 unit tests, type checking, lint, formatting, production build, and 13 browser flows passed. Browser coverage includes desktop/mobile Settings navigation, keyboard opening and Escape/focus restoration, the connections destination, and existing template, appearance, tracking, history, and recovery flows.
+
+## 2026-10-17 — Compact tracker details button
+
+- Moved Add/Edit details into the tracker footer action group with Check in. Actions wrap together while history stays separate, preventing the details button from occupying the narrow icon column in Compact layout.
+- Verification: the mobile text-overflow regression failed before the fix and passed afterward; all four affected template/tracking browser flows, type checking, lint, formatting, and whitespace checks passed. Neumorphism Compact card screenshots were inspected at 390px and 1280px.

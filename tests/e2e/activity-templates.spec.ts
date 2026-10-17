@@ -38,6 +38,7 @@ test("reusable templates, progress-only check-ins, details editing and immutable
   await expect(
     page.getByRole("heading", { name: "A little progress, every day." }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
   await page.getByText("Advanced JSON", { exact: true }).click();
   await page.getByLabel("Template definition").fill(JSON.stringify(definition));
@@ -62,6 +63,34 @@ test("reusable templates, progress-only check-ins, details editing and immutable
   const card = page.getByRole("article").filter({
     has: page.getByRole("heading", { name: "Practice", exact: true }),
   });
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: "Appearance", exact: true }).click();
+  await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
+  await selectOption(page.getByLabel("Layout", { exact: true }), "compact");
+  await page.getByRole("button", { name: "Save appearance" }).click();
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    const detailsButton = card.getByRole("button", {
+      name: "Add details",
+      exact: true,
+    });
+    await expect(detailsButton).toBeVisible();
+    expect(
+      await detailsButton.evaluate(
+        (button) => button.scrollWidth <= button.clientWidth,
+      ),
+    ).toBe(true);
+    const buttonBounds = await detailsButton.boundingBox();
+    const cardBounds = await card.boundingBox();
+    expect(buttonBounds!.x).toBeGreaterThanOrEqual(cardBounds!.x);
+    expect(buttonBounds!.x + buttonBounds!.width).toBeLessThanOrEqual(
+      cardBounds!.x + cardBounds!.width,
+    );
+    await card.screenshot({
+      path: test.info().outputPath(`details-${width}.png`),
+      animations: "disabled",
+    });
+  }
   await card.getByRole("button", { name: "Check in", exact: true }).click();
   await expect(
     card.getByRole("button", { name: "Undo check-in" }),
@@ -100,6 +129,7 @@ test("reusable templates, progress-only check-ins, details editing and immutable
   await page.getByRole("button", { name: "Save entry", exact: true }).click();
   await expect(page.locator(".history-row")).toContainText("Edited original");
   await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
   await selectOption(page.getByLabel("Template to edit"), {
     label: "Session notes",

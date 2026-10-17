@@ -146,3 +146,8 @@ These policies are implemented and covered by domain, real-database, and browser
 - Tracker updates send only supplied settings and validate the merged configuration. Type remains immutable; template null detaches future entries. Check-in updates merge supplied detail keys and explicitly remove named keys. Existing no-template and progress-only behavior remains compatible, including the policy that an entirely empty details object is allowed.
 - Consent previously explicitly excluded template changes. Add `mcp_connections.can_manage_templates`, default false, and an ownership/grant/write-aware restrictive policy. Fresh explicit write consent covers templates; older clients must reconnect to grant that capability. No account/preferences access is added and no privileged routine data path is used.
 - Local migrations are additive and applied without resetting application data. Hosted migration/deployment and actual ChatGPT natural-language acceptance remain release steps, separate from local MCP protocol tests.
+
+## 2026-10-17 — Settings navigation
+
+- Configuration has one dashboard entry: Settings in the header, available on desktop and mobile. Templates and Appearance open their existing editors; Agent connections opens the existing protected `/settings/connections` page. Removed separate dashboard/sidebar shortcuts to avoid repeated navigation. Tracking navigation stays in the sidebar.
+- Verified through local browser flows, including keyboard focus restoration and mobile layout, with existing persistence flows preserved.

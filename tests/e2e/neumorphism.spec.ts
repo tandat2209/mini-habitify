@@ -46,6 +46,7 @@ test("Neumorphism previews, persists, and keeps check-ins across desktop and mob
     has: page.getByRole("heading", { name: "Daily pause", exact: true }),
   });
   const before = await page.locator(".tracker-value").allTextContents();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
   await expect(page.locator(".app")).toHaveAttribute(
@@ -58,6 +59,7 @@ test("Neumorphism previews, persists, and keeps check-ins across desktop and mob
   await expect(page.locator(".app")).toHaveAttribute("data-theme", "paper");
   await page.reload();
   await expect(page.locator(".app")).toHaveAttribute("data-theme", "paper");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
   await page

@@ -24,6 +24,7 @@ test("custom primary colors preview, persist in pages and dialogs, and reset to 
     app.evaluate((element) =>
       getComputedStyle(element).getPropertyValue("--primary").trim(),
     );
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
   await page.getByLabel("Primary color hex", { exact: true }).fill("#4f8ec9");
@@ -32,6 +33,7 @@ test("custom primary colors preview, persist in pages and dialogs, and reset to 
     .getByRole("button", { name: "Cancel preview", exact: true })
     .click();
   expect(await primary()).toBe("#35573c");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await selectOption(page.getByLabel("Theme", { exact: true }), "neumorphism");
   await page.getByLabel("Primary color", { exact: true }).fill("#4f8ec9");
@@ -76,6 +78,7 @@ test("custom primary colors preview, persist in pages and dialogs, and reset to 
   ).toBeVisible();
   expect(await primary()).toBe("#4f8ec9");
   await page.getByRole("link", { name: "Back to Today" }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await page
     .getByRole("button", { name: "Use theme default", exact: true })
@@ -91,6 +94,7 @@ test("custom primary colors preview, persist in pages and dialogs, and reset to 
   await expect(app).toHaveAttribute("data-theme", "neumorphism");
   expect(await primary()).toBe("#b51565");
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await page
     .getByRole("button", { name: "Use blue primary color", exact: true })

@@ -1,12 +1,9 @@
 "use client";
-import Link from "next/link";
-import { Cable } from "lucide-react";
 import { useState } from "react";
 import {
   CalendarDays,
   LayoutGrid,
   Archive,
-  Palette,
   Plus,
   Leaf,
   LogOut,
@@ -14,6 +11,7 @@ import {
   Check,
   ArrowUpRight,
 } from "lucide-react";
+import { SettingsMenu } from "@/components/settings/settings-menu";
 import { Brand } from "@/components/shell/brand";
 import { signOut } from "@/lib/auth/actions";
 import { isScheduled, progress } from "@/features/tracker-engine/engine";
@@ -141,17 +139,6 @@ export function Dashboard({ data }: { data: Data }) {
               <Archive size={18} />
               <span>Archive</span>
             </button>
-            <button
-              onClick={() => setAppearance(true)}
-              aria-label="Customize your space"
-            >
-              <Palette size={18} />
-              <span>Make it yours</span>
-            </button>
-            <Link href="/settings/connections" aria-label="Connected apps">
-              <Cable size={18} />
-              <span>Connected apps</span>
-            </Link>
           </nav>
         </div>
         <div className="sidebar-bottom">
@@ -182,21 +169,11 @@ export function Dashboard({ data }: { data: Data }) {
             })}
           </div>
           <div className="topbar-actions">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTemplatesOpen(true)}
-            >
-              Templates
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setAppearance(true)}
-            >
-              <Palette data-icon="inline-start" />
-              Appearance
-            </Button>
+            <SettingsMenu
+              theme={preview.theme}
+              onTemplates={() => setTemplatesOpen(true)}
+              onAppearance={() => setAppearance(true)}
+            />
             <form action={signOut}>
               <Button
                 type="submit"

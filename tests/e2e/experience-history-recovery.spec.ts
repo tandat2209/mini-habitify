@@ -31,6 +31,7 @@ test("presets and all widget settings persist without changing check-ins", async
   await expect(
     card.getByRole("button", { name: "Undo check-in" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await selectOption(page.getByLabel("Experience preset"), "developer");
   await page.getByLabel("Show daily summary").uncheck();
@@ -49,6 +50,7 @@ test("presets and all widget settings persist without changing check-ins", async
   await expect(
     card.getByRole("button", { name: "Undo check-in" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await selectOption(page.getByLabel("Experience preset"), "playful");
   await page.getByRole("button", { name: "Save appearance" }).click();

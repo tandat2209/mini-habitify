@@ -154,30 +154,46 @@ export function TrackerCard({
         <span style={{ width: `${p.ratio * 100}%` }} />
       </div>
       <div className="tracker-footer">
-        <Button
-          variant={
-            todayLog && tracker.type === "habit" ? "secondary" : "default"
-          }
-          size="sm"
-          disabled={pending}
-          onClick={() => {
-            if (tracker.type === "habit") mutate(!!todayLog);
-            else {
-              openEntry();
+        <div className="tracker-actions">
+          <Button
+            variant={
+              todayLog && tracker.type === "habit" ? "secondary" : "default"
             }
-          }}
-        >
-          {tracker.type === "habit" && todayLog ? (
-            <Check data-icon="inline-start" />
-          ) : (
-            <Plus data-icon="inline-start" />
+            size="sm"
+            disabled={pending}
+            onClick={() => {
+              if (tracker.type === "habit") mutate(!!todayLog);
+              else {
+                openEntry();
+              }
+            }}
+          >
+            {tracker.type === "habit" && todayLog ? (
+              <Check data-icon="inline-start" />
+            ) : (
+              <Plus data-icon="inline-start" />
+            )}
+            {pending
+              ? "Saving…"
+              : tracker.type === "habit" && todayLog
+                ? "Undo check-in"
+                : "Check in"}
+          </Button>
+          {canAddDetails && !entry && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEntry(true)}
+              disabled={pending}
+            >
+              {tracker.type === "habit" &&
+              todayLog &&
+              Object.keys(todayLog.details).length
+                ? "Edit details"
+                : "Add details"}
+            </Button>
           )}
-          {pending
-            ? "Saving…"
-            : tracker.type === "habit" && todayLog
-              ? "Undo check-in"
-              : "Check in"}
-        </Button>
+        </div>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -187,20 +203,6 @@ export function TrackerCard({
           <ArrowUpRight />
         </Button>
       </div>
-      {canAddDetails && !entry && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => openEntry(true)}
-          disabled={pending}
-        >
-          {tracker.type === "habit" &&
-          todayLog &&
-          Object.keys(todayLog.details).length
-            ? "Edit details"
-            : "Add details"}
-        </Button>
-      )}
       {entry && (
         <form
           className="entry-inputs"

@@ -420,6 +420,13 @@ a {
   margin: 5px 0 0;
   min-height: 18px;
 }
+.tracker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
 .tracker-footer {
   margin-top: auto;
   display: flex;

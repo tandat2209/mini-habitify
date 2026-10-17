@@ -61,6 +61,7 @@ test("themed dropdowns support keyboard selection, dismissal, and mobile menus",
     "Lavender",
   );
   await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   const theme = page.getByRole("combobox", { name: "Theme", exact: true });
   await theme.click();

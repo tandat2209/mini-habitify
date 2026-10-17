@@ -31,6 +31,7 @@ test("builds reusable templates visually and preserves historical field versions
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
   await expect(page.getByLabel("Template definition")).not.toBeVisible();
   await page
@@ -139,6 +140,7 @@ test("builds reusable templates visually and preserves historical field versions
     .getByLabel("Summary", { exact: true })
     .fill("Actual saved details");
   await page.getByRole("button", { name: "Save details", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
   await selectOption(page.getByLabel("Template to edit", { exact: true }), {
     label: "My session",
@@ -173,6 +175,7 @@ test("builds reusable templates visually and preserves historical field versions
   );
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
   await selectOption(page.getByLabel("Template to edit", { exact: true }), {
     label: "My session",
@@ -221,6 +224,7 @@ test("mobile template builder supports long text and bounded ratings with keyboa
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
   await page.getByLabel("Template name", { exact: true }).fill("Book Reading");
   await addField(page, "What I learned", "textarea");
@@ -255,6 +259,7 @@ test("mobile template builder supports long text and bounded ratings with keyboa
     .getByRole("button", { name: "Create template", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Templates", exact: true }).click();
   await selectOption(page.getByLabel("Template to edit", { exact: true }), {
     label: "Book Reading",

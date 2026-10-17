@@ -36,6 +36,7 @@ test("account → habit → check-in → refresh → appearance → log out", as
   await expect(
     card.getByRole("button", { name: "Undo check-in" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await selectOption(page.getByLabel("Theme", { exact: true }), "terminal");
   await selectOption(
@@ -120,6 +121,7 @@ test("all tracker types, log editing, playful style, compact layout, and archive
   await page.getByRole("button", { name: "Save entry", exact: true }).click();
   await expect(page.locator(".history-row")).toContainText("3");
   await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Appearance", exact: true }).click();
   await selectOption(page.getByLabel("Theme", { exact: true }), "pastel");
   await selectOption(page.getByLabel("Experience", { exact: true }), "playful");
