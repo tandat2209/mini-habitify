@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import {
   CalendarDays,
   LayoutGrid,
@@ -139,6 +140,10 @@ export function Dashboard({ data }: { data: Data }) {
               <Archive size={18} />
               <span>Archive</span>
             </button>
+            <Link href="/review" aria-label="Weekly review">
+              <CalendarDays size={18} />
+              <span>Weekly review</span>
+            </Link>
           </nav>
         </div>
         <div className="sidebar-bottom">
