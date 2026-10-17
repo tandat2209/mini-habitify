@@ -25,6 +25,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 :root,
+:root:has(.app[data-theme="paper"]),
 [data-theme="paper"] {
   --background: #f7f5ef;
   --foreground: #2b352c;
@@ -48,6 +49,7 @@
   --chart-3: #4d774e;
   --chart-4: #284b32;
 }
+:root:has(.app[data-theme="pastel"]),
 [data-theme="pastel"] {
   --background: #f5f1fc;
   --foreground: #443859;
@@ -71,6 +73,7 @@
   --chart-3: #9470b5;
   --chart-4: #6b458d;
 }
+:root:has(.app[data-theme="terminal"]),
 [data-theme="terminal"] {
   --background: #101711;
   --foreground: #dcf3de;
@@ -94,6 +97,7 @@
   --chart-3: #64ac50;
   --chart-4: #a3e98b;
 }
+:root:has(.app[data-theme="brutalist"]),
 [data-theme="brutalist"] {
   --background: #fff6db;
   --foreground: #161611;
@@ -120,6 +124,11 @@
 * {
   box-sizing: border-box;
   border-color: var(--border);
+}
+html,
+body {
+  background: var(--background);
+  overscroll-behavior: none;
 }
 body {
   margin: 0;
@@ -1273,6 +1282,7 @@ a {
 }
 
 /* Neumorphism: one quiet surface, raised controls, and recessed inputs. */
+:root:has(.app[data-theme="neumorphism"]),
 [data-theme="neumorphism"] {
   --background: #edf0f3;
   --foreground: #2d3542;

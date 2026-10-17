@@ -151,3 +151,9 @@ These policies are implemented and covered by domain, real-database, and browser
 
 - Configuration has one dashboard entry: Settings in the header, available on desktop and mobile. Templates and Appearance open their existing editors; Agent connections opens the existing protected `/settings/connections` page. Removed separate dashboard/sidebar shortcuts to avoid repeated navigation. Tracking navigation stays in the sidebar.
 - Verified through local browser flows, including keyboard focus restoration and mobile layout, with existing persistence flows preserved.
+
+## 2026-10-17 — Theme canvas and mobile overscroll
+
+- Extend each existing theme token block to the document root when its app scope is present. The HTML/body canvas therefore follows live previews and persisted themes, including the background sampled by mobile browser chrome. Removing the app scope restores the default Paper canvas on authentication pages.
+- Synchronize the existing `theme-color` metadata with the selected theme background, restoring it when the appearance scope unmounts. Keep the manifest launch color as the unauthenticated Paper default; personalized colors apply when the authenticated app renders.
+- Disable document overscroll bounce/scroll chaining with CSS. Preserve normal scrolling, touch behavior, and browser pinch zoom; do not add `user-scalable=no`, a maximum zoom restriction, or touch-event cancellation. Native iOS status-bar rendering and physical rubber-band gestures require device acceptance beyond browser emulation.

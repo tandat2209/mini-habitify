@@ -1,6 +1,11 @@
 "use client";
-import { createContext, type CSSProperties, type ReactNode } from "react";
-import { getAccentTokens } from "@/features/themes/colors";
+import {
+  createContext,
+  useEffect,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { getAccentTokens, themeColors } from "@/features/themes/colors";
 import type { Preferences } from "@/features/trackers/validation";
 export const AppearanceColorContext = createContext<
   Record<`--${string}`, string>
@@ -21,6 +26,17 @@ export function AppearanceScope({
   children: ReactNode;
 }) {
   const colors = getAccentTokens(theme, primaryColor);
+  useEffect(() => {
+    const meta = document.querySelector<HTMLMetaElement>(
+      'meta[name="theme-color"]',
+    );
+    if (!meta) return;
+    const original = meta.content;
+    meta.content = themeColors[theme].background;
+    return () => {
+      meta.content = original;
+    };
+  }, [theme]);
   return (
     <AppearanceThemeContext.Provider value={theme}>
       <AppearanceColorContext.Provider value={colors}>
