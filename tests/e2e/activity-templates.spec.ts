@@ -96,6 +96,23 @@ test("reusable templates, progress-only check-ins, details editing and immutable
     card.getByRole("button", { name: "Undo check-in" }),
   ).toBeVisible();
   await card.getByRole("button", { name: "Add details", exact: true }).click();
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    const form = card.locator(".entry-inputs");
+    const formBounds = await form.boundingBox();
+    const cardBounds = await card.boundingBox();
+    expect(formBounds!.width).toBeGreaterThanOrEqual(cardBounds!.width - 48);
+    for (const label of ["Summary", "Items"]) {
+      const fieldBounds = await card
+        .getByLabel(label, { exact: true })
+        .boundingBox();
+      expect(fieldBounds!.width).toBeGreaterThanOrEqual(formBounds!.width - 2);
+    }
+    await card.screenshot({
+      path: test.info().outputPath(`expanded-details-${width}.png`),
+      animations: "disabled",
+    });
+  }
   await card.getByLabel("Rating", { exact: true }).fill("0");
   await card.getByRole("button", { name: "Save details", exact: true }).click();
   await expect(card.getByRole("alert")).toContainText(

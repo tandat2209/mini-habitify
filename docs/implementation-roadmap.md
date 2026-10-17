@@ -157,3 +157,8 @@ The initial app is committed locally as `be38ba2`; subsequent feature work is no
 - HTML/body backgrounds now use the app's theme tokens, and browser `theme-color` follows preview/save/cancel. Authentication restores Paper; the manifest's initial launch color remains Paper until the personalized app renders.
 - Disabled document overscroll bounce/chaining with CSS while retaining normal scrolling and unrestricted browser zoom.
 - Verification: the canvas regression failed before the fix; both Chromium and iPhone WebKit passed the new preview/cancel/save/refresh/navigation/logout test. All seven production browser checks passed across PWA offline/install behavior, appearance/custom colors, Settings, and the new canvas flows. All 69 unit tests, type checking, lint, formatting, production build, and whitespace checks passed. The iPhone WebKit screenshot was inspected. Physical iPhone status-bar tint and native gesture acceptance remain unverified by emulation.
+
+## 2026-10-17 — Full-width inline details forms
+
+- Entry forms now span all Compact card columns and fill the available width. Shared wrapping keeps detail fields and save/cancel controls usable on mobile, including entries without templates.
+- Verification: the regression reproduced a 40px form before the fix. Full-width form/textarea assertions passed at 390px and 1280px, and both screenshots were inspected. All four production browser flows for templates/tracking, type checking, lint, formatting, production build, and whitespace checks passed. A development screenshot run was interrupted by a page rerender; the production rerun passed.

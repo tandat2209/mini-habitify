@@ -744,7 +744,11 @@ a {
   overflow: auto;
 }
 .entry-inputs {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .entry-inputs input {
@@ -1266,9 +1270,6 @@ a {
 .template-help p {
   margin-top: 0.75rem;
   color: var(--muted-foreground);
-}
-.entry-inputs:has(.details-fields) {
-  flex-wrap: wrap;
 }
 .history-row:has(.recorded-details) {
   flex-wrap: wrap;
